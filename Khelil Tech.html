@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>KHELIL TECH — Premium Electronics Store Algeria</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<div class="loading-overlay hidden" id="loading-overlay">
+  <div class="ld-spinner"></div>
+  <div class="ld-text">Placing your order...</div>
+</div>
+
+<nav id="navbar">
+  <div class="logo-mark" onclick="nav('home')">
+    
+    <img src="logo.png" alt="Khelil Tech Logo" class="logo-img" width="50" height="50"/>
+    <div class="logo-text">KHELIL <span>TECH</span></div>
+  </div>
+  <ul class="nav-center">
+    <li><a onclick="nav('home')" href="#">Home</a></li>
+    <li><a onclick="nav('shop')" href="#">Shop</a></li>
+    <li><a onclick="nav('shop','Gaming PCs')" href="#">Gaming PCs</a></li>
+    <li><a onclick="nav('shop','Laptops')" href="#">Laptops</a></li>
+    <li><a onclick="nav('shop','Smartphones')" href="#">Phones</a></li>
+    <li><a onclick="nav('admin')" href="#">Admin</a></li>
+  </ul>
+  
+  <div class="nav-right">
+    <button class="icon-btn" onclick="goSearch()" title="Search">🔍</button>
+    <button class="icon-btn" onclick="nav('wishlist')" title="Wishlist">
+      ♥<span class="badge-dot" id="wish-badge" style="display:none">0</span>
+    </button>
+    <button class="icon-btn" onclick="openCart()" title="Cart">
+      🛒<span class="badge-dot" id="cart-badge">0</span>
+    </button>
+    <button class="hamburger" onclick="toggleMob()">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<div class="mob-menu" id="mob-menu">
+  <div class="mob-item" onclick="nav('home');closeMob()">🏠 Home</div>
+  <div class="mob-item" onclick="nav('shop');closeMob()">🛍️ All Products</div>
+  <div class="mob-item" onclick="nav('shop','Gaming PCs');closeMob()">🖥️ Gaming PCs</div>
+  <div class="mob-item" onclick="nav('shop','Laptops');closeMob()">💻 Laptops</div>
+  <div class="mob-item" onclick="nav('shop','Smartphones');closeMob()">📱 Smartphones</div>
+  <div class="mob-item" onclick="nav('wishlist');closeMob()">❤️ Wishlist</div>
+  <div class="mob-item" onclick="nav('admin');closeMob()">⚙️ Admin</div>
+</div>
+
+<!-- HOME PAGE -->
+<div id="page-home" class="page active">
+  <section id="hero">
+    <div class="hero-bg-mesh"></div>
+    <div class="hero-lines"></div>
+    <div class="hero-content">
+      <div>
+        <div class="hero-eyebrow"><span class="pulse"></span>Algeria's #1 Tech Store</div>
+        <h1 class="hero-h1">NEXT-GEN<br><em>TECHNOLOGY</em><br>UNLEASHED</h1>
+        <p class="hero-p">Premium gaming PCs, laptops, smartphones and accessories — Delivered to all 58 Wilayas. Genuine products. Best prices. Guaranteed.</p>
+        <div class="hero-cta">
+          <button class="btn-prime" onclick="nav('shop')">EXPLORE STORE →</button>
+          <button class="btn-ghost" onclick="nav('shop','Gaming PCs')">GAMING PCs</button>
+        </div>
+        <div class="hero-kpis">
+          <div class="kpi"><div class="kpi-n">2400+</div><div class="kpi-l">Products</div></div>
+          <div class="kpi"><div class="kpi-n">58</div><div class="kpi-l">Wilayas</div></div>
+          <div class="kpi"><div class="kpi-n">99%</div><div class="kpi-l">Satisfaction</div></div>
+          <div class="kpi"><div class="kpi-n">24/7</div><div class="kpi-l">Support</div></div>
+        </div>
+      </div>
+      <div class="hero-right">
+        <div class="hero-card">
+          <div class="hc-badge">⚡ FLASH DEAL — 21% OFF</div>
+          <span class="hc-img" id="hero-ico">🖥️</span>
+          <div class="hc-name">RTX 4090 Gaming Beast Pro</div>
+          <div class="hc-sub">Core i9-14900K · 64GB DDR5 · 2TB NVMe</div>
+          <div><span class="hc-price">299,000 DA</span><span class="hc-old">380,000 DA</span></div>
+          <div class="hc-bar"><div class="hc-bar-fill"></div></div>
+          <div class="hc-stock-txt"><span>🔥 Only 7 left!</span><span>73% sold</span></div>
+          <button class="btn-prime" style="margin-top:18px;width:100%;" onclick="nav('shop')">VIEW ALL DEALS</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="ticker-wrap">
+    <div class="ticker-track" id="ticker">
+      <span class="ticker-item"><span class="ticker-sep"></span>FREE DELIVERY ON ORDERS OVER 5000 DA</span>
+      <span class="ticker-item"><span class="ticker-sep"></span>AUTHENTIC PRODUCTS · WARRANTY INCLUDED</span>
+      <span class="ticker-item"><span class="ticker-sep"></span>COD AVAILABLE ACROSS ALL 58 WILAYAS</span>
+      <span class="ticker-item"><span class="ticker-sep"></span>RTX 4090 GPUs IN STOCK NOW</span>
+      <span class="ticker-item"><span class="ticker-sep"></span>APPLE MacBook PRO M3 · LIMITED STOCK</span>
+      <span class="ticker-item"><span class="ticker-sep"></span>FREE DELIVERY ON ORDERS OVER 5000 DA</span>
+      <span class="ticker-item"><span class="ticker-sep"></span>AUTHENTIC PRODUCTS · WARRANTY INCLUDED</span>
+      <span class="ticker-item"><span class="ticker-sep"></span>COD AVAILABLE ACROSS ALL 58 WILAYAS</span>
+      <span class="ticker-item"><span class="ticker-sep"></span>RTX 4090 GPUs IN STOCK NOW</span>
+      <span class="ticker-item"><span class="ticker-sep"></span>APPLE MacBook PRO M3 · LIMITED STOCK</span>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head">
+      <div class="sec-tag">Browse By Type</div>
+      <h2 class="sec-h2">PRODUCT CATEGORIES</h2>
+      <p class="sec-p">From high-performance gaming rigs to everyday essentials</p>
+    </div>
+    <div class="cats-grid" id="cats-grid"></div>
+  </div>
+
+  <div style="max-width:1260px;margin:0 auto;padding:0 28px;">
+    <div class="flash-band">
+      <div class="fl-left">
+        <div class="fl-icon">⚡</div>
+        <div><div class="fl-title">FLASH SALE</div><div class="fl-sub">Limited time — Up to 40% OFF</div></div>
+      </div>
+      <div class="countdown" id="countdown">
+        <div class="cd-unit"><span class="cd-n" id="cd-h">08</span><span class="cd-l">HRS</span></div>
+        <span class="cd-sep">:</span>
+        <div class="cd-unit"><span class="cd-n" id="cd-m">24</span><span class="cd-l">MIN</span></div>
+        <span class="cd-sep">:</span>
+        <div class="cd-unit"><span class="cd-n" id="cd-s">00</span><span class="cd-l">SEC</span></div>
+      </div>
+    </div>
+    <div class="prods-grid" id="flash-prods"></div>
+  </div>
+
+  <div style="max-width:1260px;margin:40px auto 0;padding:0 28px;">
+    <div class="promo-duo">
+      <div class="promo-c a">
+        <div class="promo-emoji">🖥️</div>
+        <div class="promo-lbl">New Arrivals</div>
+        <div class="promo-h">RTX 4090 Gaming PCs</div>
+        <div class="promo-s">Unleash the beast — Ultimate 4K gaming performance</div>
+        <div class="promo-link" onclick="nav('shop','Gaming PCs')">Shop Gaming PCs →</div>
+      </div>
+      <div class="promo-c b">
+        <div class="promo-emoji">📱</div>
+        <div class="promo-lbl">Hot Deals</div>
+        <div class="promo-h">iPhone 15 Pro</div>
+        <div class="promo-s">Pro camera. Pro chip. Titanium.</div>
+        <div class="promo-link" onclick="nav('shop','Smartphones')">Shop Now →</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head">
+      <div class="sec-tag">🔥 Most Popular</div>
+      <h2 class="sec-h2">TRENDING PRODUCTS</h2>
+      <p class="sec-p">Best-rated products chosen by our customers</p>
+    </div>
+    <div class="prods-grid" id="trending-prods"></div>
+  </div>
+
+  <div style="padding:0 28px;">
+    <div class="newsletter">
+      <h3>⚡ JOIN THE KHELIL TECH COMMUNITY</h3>
+      <p>Get exclusive deals, new arrivals and tech news delivered to your inbox</p>
+      <div class="nl-form">
+        <input class="nl-in" type="email" id="nl-email" placeholder="your@email.com"/>
+        <button class="btn-prime" onclick="subscribe()">JOIN</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="foot-grid">
+      <div>
+        <div class="logo-mark" style="margin-bottom:14px;">
+          <div class="logo-icon">KT</div>
+          <div class="logo-text">KHELIL <span>TECH</span></div>
+        </div>
+        <p class="foot-brand-desc">Algeria's premier destination for gaming PCs, laptops, smartphones and accessories. Serving all 58 Wilayas with fast delivery and genuine products.</p>
+        <div class="socials">
+          <div class="soc-btn">f</div>
+          <div class="soc-btn">in</div>
+          <div class="soc-btn">W</div>
+          <div class="soc-btn">▶</div>
+        </div>
+      </div>
+      <div class="foot-col">
+        <h4>Shop</h4>
+        <ul class="foot-links">
+          <li><a onclick="nav('shop','Gaming PCs')">Gaming PCs</a></li>
+          <li><a onclick="nav('shop','Laptops')">Laptops</a></li>
+          <li><a onclick="nav('shop','Smartphones')">Smartphones</a></li>
+          <li><a onclick="nav('shop','Monitors')">Monitors</a></li>
+          <li><a onclick="nav('shop','Accessories')">Accessories</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Support</h4>
+        <ul class="foot-links">
+          <li><a href="#">Track Order</a></li>
+          <li><a href="#">Warranty</a></li>
+          <li><a href="#">Returns</a></li>
+          <li><a href="#">FAQ</a></li>
+          <li><a href="#">Contact Us</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Company</h4>
+        <ul class="foot-links">
+          <li><a href="#">About Us</a></li>
+          <li><a href="#">Blog</a></li>
+          <li><a href="#">Careers</a></li>
+          <li><a href="#">Privacy Policy</a></li>
+          <li><a href="#">Terms</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <p>© 2025 KHELIL TECH. All rights reserved. Made with ❤️ in 🇩🇿 Algeria</p>
+      <div class="pay-icons">
+        <div class="pay-ico">CIB</div>
+        <div class="pay-ico">BaridiMob</div>
+        <div class="pay-ico">COD</div>
+        <div class="pay-ico">CCP</div>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<!-- SHOP PAGE -->
+<div id="page-shop" class="page">
+  <div class="sec" style="padding-top:36px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;flex-wrap:wrap;gap:12px;">
+      <h1 style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;" id="shop-title">ALL PRODUCTS</h1>
+      <span style="color:var(--text3);font-size:12px;font-family:'JetBrains Mono',monospace;" id="prod-count">—</span>
+    </div>
+    <div class="srch-wrap">
+      <input class="srch-in" type="text" placeholder="Search products, brands, models..." id="shop-srch" oninput="filterProds()"/>
+      <span class="srch-ico">🔍</span>
+    </div>
+    <div class="filters" id="filters-bar"></div>
+    <div class="prods-grid" id="shop-grid"></div>
+  </div>
+  <footer>
+    <div class="foot-bottom" style="max-width:1260px;margin:0 auto;">
+      <p>© 2025 KHELIL TECH. All rights reserved.</p>
+    </div>
+  </footer>
+</div>
+
+<!-- PRODUCT DETAIL -->
+<div id="page-product" class="page">
+  <div class="det-wrap" id="det-content"></div>
+</div>
+
+<!-- CHECKOUT -->
+<div id="page-checkout" class="page">
+  <div style="max-width:1100px;margin:0 auto;padding:36px 28px 16px;">
+    <div class="back-link" onclick="nav('home')">← Back to Shopping</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:28px;">
+      <h1 style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;">CHECKOUT</h1>
+      <div id="sheets-status-bar" style="font-size:11px;color:var(--lime);font-family:'JetBrains Mono',monospace;">✅ Google Sheets Connected</div>
+    </div>
+  </div>
+  <div class="co-wrap">
+    <div class="co-form">
+      <div class="co-form-h2">Customer Information</div>
+      <div class="form-sec">
+        <span class="form-sec-lbl">👤 Personal Details</span>
+        <div class="f-row">
+          <div class="f-grp"><label>First Name <span class="req">*</span></label><input class="f-in" id="f-fname" placeholder="Mohamed"/></div>
+          <div class="f-grp"><label>Last Name <span class="req">*</span></label><input class="f-in" id="f-lname" placeholder="Khelil"/></div>
+        </div>
+        <div class="f-grp"><label>Phone Number <span class="req">*</span></label><input class="f-in" id="f-phone" placeholder="0555 000 000" type="tel"/></div>
+        <div class="f-grp"><label>Email Address (optional)</label><input class="f-in" id="f-email" placeholder="email@example.com" type="email"/></div>
+      </div>
+      <div class="form-sec">
+        <span class="form-sec-lbl">📍 Delivery Address</span>
+        <div class="f-row">
+          <div class="f-grp"><label>Wilaya <span class="req">*</span></label><select class="f-sel" id="f-wilaya"><option value="">Select Wilaya</option></select></div>
+          <div class="f-grp"><label>Commune <span class="req">*</span></label><input class="f-in" id="f-commune" placeholder="Your commune"/></div>
+        </div>
+        <div class="f-grp"><label>Full Address <span class="req">*</span></label><input class="f-in" id="f-address" placeholder="Street, building, apartment number..."/></div>
+      </div>
+      <div class="form-sec">
+        <span class="form-sec-lbl">🚚 Delivery Method</span>
+        <div class="del-opts">
+          <div class="del-opt sel" id="opt-home" onclick="selDel('home')">
+            <div class="del-opt-ico">🏠</div>
+            <div class="del-opt-name">Home Delivery</div>
+            <div class="del-opt-price">700 – 900 DA</div>
+            <div class="del-opt-time">2–5 business days</div>
+          </div>
+          <div class="del-opt" id="opt-stop" onclick="selDel('stop')">
+            <div class="del-opt-ico">📦</div>
+            <div class="del-opt-name">Desk Pickup</div>
+            <div class="del-opt-price">400 – 600 DA</div>
+            <div class="del-opt-time">1–3 business days</div>
+          </div>
+        </div>
+      </div>
+      <div class="form-sec">
+        <span class="form-sec-lbl">💵 Payment Method</span>
+        <div class="del-opt sel" style="cursor:default;">
+          <div class="del-opt-ico">💵</div>
+          <div class="del-opt-name">Cash on Delivery (COD)</div>
+          <div class="del-opt-time">Pay when you receive your order — Safe and Easy</div>
+        </div>
+      </div>
+      <div class="f-grp"><label>Order Notes (optional)</label><input class="f-in" id="f-notes" placeholder="Special instructions, colors, preferences..."/></div>
+    </div>
+    <div class="co-summary">
+      <div class="sum-card">
+        <h3>ORDER SUMMARY</h3>
+        <div id="co-items-list"></div>
+        <div class="promo-row">
+          <input class="promo-in" id="promo-code" placeholder="Promo code (e.g. KHELIL10)"/>
+          <button class="promo-apply" onclick="applyPromo()">APPLY</button>
+        </div>
+        <div class="sum-totals">
+          <div class="sum-tot-line"><span>Subtotal</span><span id="s-sub">0 DA</span></div>
+          <div class="sum-tot-line"><span>Delivery</span><span id="s-del">700 DA</span></div>
+          <div class="sum-tot-line" id="s-disc-row" style="display:none;"><span>Discount</span><span id="s-disc" style="color:var(--lime)">-0 DA</span></div>
+        </div>
+        <div class="sum-grand"><span>Total</span><span class="g-amt" id="s-total">0 DA</span></div>
+        <button class="btn-prime confirm-btn" onclick="placeOrder()">✅ CONFIRM ORDER</button>
+        <p class="sec-note">🔒 Secure · Cash on Delivery · All 58 Wilayas</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SUCCESS PAGE -->
+<div id="page-success" class="page">
+  <div class="success-pg">
+    <div class="success-ico">✅</div>
+    <h1>ORDER CONFIRMED!</h1>
+    <p style="color:var(--text2);font-size:15px;line-height:1.7;">Your order has been placed successfully and sent to our team. We will call you shortly to confirm delivery details.</p>
+    <div class="order-id-box">
+      <div class="oid-lbl">Order ID</div>
+      <div class="oid-num" id="suc-oid">KT-000000</div>
+    </div>
+    <div class="order-dets-grid" id="suc-dets"></div>
+    <div style="background:rgba(0,229,255,0.06);border:1px solid rgba(0,229,255,0.15);border-radius:var(--r2);padding:16px;margin:18px 0;font-size:13px;color:var(--text2);line-height:1.7;">
+      📋 Your order has been saved and synchronized with Google Sheets automatically. Expect a confirmation call within 1–2 hours.
+    </div>
+    <div class="success-actions">
+      <button class="btn-prime" onclick="nav('home')">CONTINUE SHOPPING</button>
+      <button class="btn-ghost" onclick="waOrder()">📱 WhatsApp Confirmation</button>
+    </div>
+  </div>
+</div>
+
+<!-- WISHLIST PAGE -->
+<div id="page-wishlist" class="page">
+  <div class="wish-pg">
+    <h1>MY WISHLIST <span style="font-family:'JetBrains Mono',monospace;font-size:16px;color:var(--text3);" id="wish-count-lbl"></span></h1>
+    <div class="prods-grid" id="wish-grid"></div>
+    <div id="wish-empty" style="display:none;text-align:center;padding:60px;color:var(--text3);">
+      <div style="font-size:56px;margin-bottom:16px;">💔</div>
+      <p style="margin-bottom:20px;">Your wishlist is empty. Start adding products!</p>
+      <button class="btn-prime" onclick="nav('shop')">BROWSE PRODUCTS</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN PAGE -->
+<div id="page-admin" class="page">
+  <div class="adm-layout">
+    <div class="adm-sidebar">
+      <div class="adm-sec-title">Overview</div>
+      <div class="adm-nav-item on" onclick="showAdm('dashboard',this)"><span class="adm-nav-ico">📊</span>Dashboard</div>
+      <div class="adm-nav-item" onclick="showAdm('orders',this)"><span class="adm-nav-ico">📦</span>Orders</div>
+      <div class="adm-nav-item" onclick="showAdm('products',this)"><span class="adm-nav-ico">🛍️</span>Products</div>
+      <div class="adm-sec-title">Management</div>
+      <div class="adm-nav-item" onclick="showAdm('analytics',this)"><span class="adm-nav-ico">📈</span>Analytics</div>
+      <div class="adm-sec-title">Settings</div>
+      <div class="adm-nav-item" onclick="showAdm('settings',this)"><span class="adm-nav-ico">⚙️</span>Settings</div>
+    </div>
+    <div class="adm-content">
+      <div id="adm-dashboard">
+        <div class="adm-hd">
+          <h1>DASHBOARD</h1>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-ghost" style="padding:8px 16px;font-size:12px;" onclick="showAdm('settings',document.querySelector('.adm-nav-item:last-child'))">⚙️ Settings</button>
+            <button class="btn-prime" style="padding:8px 18px;font-size:12px;" onclick="nav('shop')">+ VIEW STORE</button>
+          </div>
+        </div>
+        <div class="stat-grid">
+          <div class="s-card c"><div class="s-card-ico">💰</div><div class="s-card-val" id="adm-rev">—</div><div class="s-card-lbl">Revenue (DA)</div><div class="s-card-ch ch-up">↑ +12.5% this month</div></div>
+          <div class="s-card g"><div class="s-card-ico">📦</div><div class="s-card-val" id="adm-ord">—</div><div class="s-card-lbl">Total Orders</div><div class="s-card-ch ch-up">↑ +8.2% this month</div></div>
+          <div class="s-card v"><div class="s-card-ico">👥</div><div class="s-card-val">3,421</div><div class="s-card-lbl">Customers</div><div class="s-card-ch ch-up">↑ +15.1% this month</div></div>
+          <div class="s-card r"><div class="s-card-ico">🛍️</div><div class="s-card-val">2,400</div><div class="s-card-lbl">Products</div><div class="s-card-ch ch-dn">↓ 2 out of stock</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+          <div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r2);padding:22px;">
+            <h3 style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:20px;">SALES BY CATEGORY</h3>
+            <div id="sales-chart"></div>
+          </div>
+          <div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r2);padding:22px;">
+            <h3 style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:18px;">RECENT ORDERS</h3>
+            <div id="recent-mini"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="adm-orders" style="display:none;">
+        <div class="adm-hd">
+          <h1>ORDERS</h1>
+          <button class="btn-ghost" style="padding:8px 16px;font-size:12px;" onclick="exportCSV()">📥 Export CSV</button>
+        </div>
+        <div class="adm-table-wrap">
+          <table class="adm-table">
+            <thead><tr><th>Order ID</th><th>Name</th><th>Phone</th><th>Wilaya</th><th>Products</th><th>Total</th><th>Type</th><th>Status</th><th>Date</th></tr></thead>
+            <tbody id="orders-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="adm-products" style="display:none;">
+        <div class="adm-hd"><h1>PRODUCTS</h1><button class="btn-prime" style="padding:8px 18px;font-size:12px;">+ ADD PRODUCT</button></div>
+        <div class="adm-table-wrap">
+          <table class="adm-table">
+            <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Sales</th><th>Status</th></tr></thead>
+            <tbody id="prods-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="adm-analytics" style="display:none;">
+        <div class="adm-hd"><h1>ANALYTICS</h1></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+          <div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r2);padding:22px;">
+            <h3 style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:20px;">TOP SELLING PRODUCTS</h3>
+            <div id="analytics-chart"></div>
+          </div>
+          <div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r2);padding:22px;">
+            <h3 style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:20px;">ORDERS BY WILAYA</h3>
+            <div id="wilaya-chart"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="adm-settings" style="display:none;">
+        <div class="adm-hd"><h1>SETTINGS</h1></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;max-width:800px;">
+          <div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r2);padding:22px;grid-column:1/-1;">
+            <h3 style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:6px;">🔗 Google Sheets Integration</h3>
+            <p style="color:var(--lime);font-size:12px;margin-bottom:14px;line-height:1.6;">✅ URL hardcoded — Orders sync automatically to Google Sheets on every order.</p>
+            <div style="background:var(--bg3);border:1px solid rgba(170,255,0,0.2);border-radius:var(--r);padding:10px 14px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);word-break:break-all;margin-bottom:14px;">
+              https://script.google.com/macros/s/AKfycbyuLWImltJP0qNKP1wUTZSzuMPYBJX6TEV90vqsXSa0e1v-pydWSD8fqnUlxfUTn3cP/exec
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;">
+              <button class="btn-ghost" style="padding:10px 18px;font-size:12px;" onclick="testSheets()">TEST CONNECTION</button>
+              <span id="sheets-test-result" style="font-size:11px;font-family:'JetBrains Mono',monospace;"></span>
+            </div>
+          </div>
+          <div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r2);padding:22px;">
+            <h3 style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:16px;">📱 WhatsApp Number</h3>
+            <div class="f-grp"><label>WhatsApp (with country code)</label><input class="f-in" id="wa-number" placeholder="+213 555 000 000"/></div>
+            <button class="btn-prime" style="padding:10px 22px;font-size:12px;margin-top:8px;" onclick="saveWA()">SAVE</button>
+          </div>
+          <div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r2);padding:22px;">
+            <h3 style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:16px;">🏪 Store Settings</h3>
+            <div class="f-grp"><label>Store Name</label><input class="f-in" value="KHELIL TECH"/></div>
+            <div class="f-grp"><label>Delivery Cost (DA)</label><input class="f-in" type="number" value="700"/></div>
+            <button class="btn-prime" style="padding:10px 22px;font-size:12px;margin-top:8px;" onclick="toast('Settings saved ✅','ok')">SAVE</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CART PANEL -->
+<div class="cart-ov" id="cart-ov" onclick="closeCart()"></div>
+<div id="cart-panel">
+  <div class="cart-hd">
+    <h2>🛒 MY CART</h2>
+    <button class="close-x" onclick="closeCart()">✕</button>
+  </div>
+  <div class="cart-list" id="cart-list"></div>
+  <div class="cart-ft" id="cart-ft"></div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div id="toast-box"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
