@@ -143,7 +143,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .filter-pill.on,.filter-pill:hover{background:rgba(0,229,255,0.08);border-color:rgba(0,229,255,0.4);color:var(--cyan);}
 .sort-sel{background:var(--panel);border:1px solid var(--border);color:var(--text2);padding:7px 14px;border-radius:var(--r);font-size:12px;cursor:pointer;margin-left:auto;font-family:'Space Grotesk',sans-serif;}
 .sort-sel:focus{outline:none;border-color:var(--cyan);}
-.det-wrap{padding:40px 28px;max-width:1260px;margin:0 auto;}
+.det-wrap{padding:40px 28px 60px;max-width:1260px;margin:0 auto;}
 .back-link{display:inline-flex;align-items:center;gap:8px;color:var(--text2);cursor:pointer;font-size:13px;margin-bottom:36px;transition:color 0.2s;}
 .back-link:hover{color:var(--cyan);}
 .det-grid{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:start;}
@@ -344,6 +344,8 @@ footer{background:var(--panel);border-top:1px solid var(--border);padding:56px 2
 @media(max-width:960px){
 .hero-content{grid-template-columns:1fr;}.hero-right{display:none;}
 .det-grid{grid-template-columns:1fr;}
+.det-gallery{position:static;}
+.det-main-img{height:260px;}
 .co-wrap{grid-template-columns:1fr;}
 .co-summary{position:static;}
 .promo-duo{grid-template-columns:1fr;}
@@ -355,11 +357,23 @@ footer{background:var(--panel);border-top:1px solid var(--border);padding:56px 2
 @media(max-width:620px){
 .nav-center{display:none!important;}.hamburger{display:flex;}
 .cats-grid{grid-template-columns:repeat(3,1fr);}
-.prods-grid{grid-template-columns:repeat(2,1fr);}
+.prods-grid{grid-template-columns:repeat(2,1fr);gap:12px;}
+.prod-img{height:140px;}
+.prod-img img{padding:8px;}
+.prod-body{padding:10px;}
+.prod-name{font-size:12px;}
+.prod-price{font-size:13px;}
+.det-main-img{height:220px;}
+.det-h1{font-size:20px;}
+.det-price{font-size:26px;}
 .hero-kpis{width:100%;}
 .kpi{flex:1;}
 .order-dets-grid{grid-template-columns:1fr;}
 .stat-grid{grid-template-columns:repeat(2,1fr);}
 .del-opts{grid-template-columns:1fr;}
 }
-@media(max-width:380px){.prods-grid{grid-template-columns:1fr;}}
+@media(max-width:380px){
+.prods-grid{grid-template-columns:repeat(2,1fr);}
+.prod-img{height:120px;}
+.prod-name{font-size:11px;}
+}
