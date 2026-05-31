@@ -204,12 +204,24 @@ document.addEventListener('DOMContentLoaded', () => {
   setInterval(rotHeroIco, 3000);
   const waEl = document.getElementById('wa-number');
   if (waEl && localStorage.getItem('kt-wa')) waEl.value = localStorage.getItem('kt-wa');
+
+  // تحميل الصفحة الصحيحة من الـ URL عند الفتح
+  const hash = window.location.hash.replace('#', '');
+  if (hash) {
+    const parts = hash.split('/');
+    const page = parts[0];
+    const cat = parts[1] ? decodeURIComponent(parts[1]) : '';
+    nav(page, cat, false);
+  } else {
+    // حفظ الصفحة الرئيسية كنقطة بداية
+    history.replaceState({ page: 'home', cat: '' }, '', '#home');
+  }
 });
 
 // ============================================================
 // NAVIGATION
 // ============================================================
-function nav(page, cat = '') {
+function nav(page, cat = '', pushToHistory = true) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const pg = document.getElementById('page-' + page);
   if (!pg) return;
@@ -224,7 +236,24 @@ function nav(page, cat = '') {
   if (page === 'checkout') renderCheckout();
   if (page === 'wishlist') renderWishPage();
   if (page === 'admin')    renderAdm();
+
+  // حفظ الصفحة الحالية في تاريخ المتصفح
+  if (pushToHistory) {
+    const state = { page, cat };
+    const url = '#' + page + (cat ? '/' + encodeURIComponent(cat) : '');
+    history.pushState(state, '', url);
+  }
 }
+
+// الرجوع للصفحة السابقة بزر Back
+window.addEventListener('popstate', function(event) {
+  if (event.state && event.state.page) {
+    nav(event.state.page, event.state.cat || '', false);
+  } else {
+    // إذا ما كان فيه state نرجعو للصفحة الرئيسية
+    nav('home', '', false);
+  }
+});
 
 // ============================================================
 // CATEGORIES
@@ -350,18 +379,17 @@ function openProd(id) {
         alt="${p.name}"
         id="det-main-img-el"
         style="max-width:100%;max-height:340px;object-fit:contain;display:block;margin:auto;"
-        onerror="this.style.display='none';var ic=document.getElementById('det-main-icon');ic.style.display='block';this.closest('.det-main-img').style.height='160px';"
-      /><span id="det-main-icon" style="display:none;font-size:100px;">${p.icon}</span>`
-    : `<span style="font-size:100px;">${p.icon}</span>`;
+        onerror="this.style.display='none';document.getElementById('det-main-icon').style.display='block';"
+      /><span id="det-main-icon" style="display:none;font-size:120px;">${p.icon}</span>`
+    : `<span style="font-size:120px;">${p.icon}</span>`;
 
-  // Build thumbs — only show if there are real images
-  const hasRealImgs = galleryImgs.length > 0;
+  // Build thumbs from actual gallery images, pad to 4 if needed
   const thumbImgs = [...galleryImgs];
   while (thumbImgs.length < 4) thumbImgs.push(firstImg || '');
   const thumbs = thumbImgs.slice(0, 4).map((src, i) => `
     <div class="det-thumb ${i === 0 ? 'on' : ''}" onclick="switchDetImg('${src}',this)">
       ${src
-        ? `<img src="${src}" alt="" style="width:100%;height:100%;object-fit:contain;" onerror="this.closest('.det-thumb').style.display='none'">`
+        ? `<img src="${src}" alt="" style="width:100%;height:100%;object-fit:contain;" onerror="this.outerHTML='<span>${p.icon}</span>'">`
         : p.icon
       }
     </div>`).join('');
@@ -371,7 +399,7 @@ function openProd(id) {
     <div class="det-grid">
       <div class="det-gallery">
         <div class="det-main-img">${mainMedia}</div>
-        ${hasRealImgs ? `<div class="det-thumbs">${thumbs}</div>` : ''}
+        <div class="det-thumbs">${thumbs}</div>
       </div>
       <div>
         <div class="det-brand">${p.brand}</div>
