@@ -1030,3 +1030,25 @@ function rotHeroIco() {
 
 function toggleMob() { document.getElementById('mob-menu').classList.toggle('open'); }
 function closeMob()  { document.getElementById('mob-menu').classList.remove('open'); }
+// ============================================================
+// FIT HERO TITLE — يصغر الفونت ليفي كل سطر في الشاشة
+// ============================================================
+function fitHeroTitle() {
+  const h1 = document.querySelector('.hero-h1');
+  if (!h1) return;
+  const container = h1.parentElement;
+  const containerWidth = container.clientWidth;
+  if (containerWidth === 0) return;
+
+  // ابدأ من حجم كبير ونزل حتى يفي
+  let size = 80;
+  h1.style.fontSize = size + 'px';
+
+  while (size > 16 && h1.scrollWidth > containerWidth) {
+    size -= 0.5;
+    h1.style.fontSize = size + 'px';
+  }
+}
+
+window.addEventListener('load', fitHeroTitle);
+window.addEventListener('resize', fitHeroTitle);
