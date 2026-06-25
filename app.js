@@ -192,6 +192,7 @@ let curProd   = null;
 // INIT
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
+  initTheme();
   renderCats();
   renderFlash();
   renderTrending();
@@ -200,7 +201,6 @@ document.addEventListener('DOMContentLoaded', () => {
   startCd();
   initNavScroll();
   initShop();
-  renderAdm();
   setInterval(rotHeroIco, 3000);
   const waEl = document.getElementById('wa-number');
   if (waEl && localStorage.getItem('kt-wa')) waEl.value = localStorage.getItem('kt-wa');
@@ -979,8 +979,30 @@ async function testSheets() {
 }
 
 // ============================================================
-// UI HELPERS
+// THEME TOGGLE — Light / Dark Mode
 // ============================================================
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light-mode');
+  localStorage.setItem('kt-theme', isLight ? 'light' : 'dark');
+  updateThemeBtn(isLight);
+}
+
+function updateThemeBtn(isLight) {
+  const btn = document.getElementById('theme-btn');
+  const mobBtn = document.getElementById('theme-mob-btn');
+  if (btn) btn.textContent = isLight ? '☀️' : '🌙';
+  if (mobBtn) mobBtn.textContent = isLight ? '☀️ Light Mode' : '🌙 Dark Mode';
+}
+
+function initTheme() {
+  const saved = localStorage.getItem('kt-theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const isLight = saved === 'light' || (!saved && !prefersDark);
+  if (isLight) document.body.classList.add('light-mode');
+  updateThemeBtn(isLight);
+}
+
+
 function toast(msg, type = 'info') {
   const box   = document.getElementById('toast-box');
   const icons = { ok: '✅', err: '❌', info: 'ℹ️' };
