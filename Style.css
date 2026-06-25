@@ -124,7 +124,7 @@ body::before{
   align-items:center;
   gap:8px;
   min-width:0;
-  flex:1;
+  flex-shrink:0;
 }
 
 .logo-img{
