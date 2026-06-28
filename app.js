@@ -33,7 +33,7 @@ const PRODS = [
     price:68000, orig:120000,
     icon:'',
     imgs:['images/hpomen15-i7-8eme-16-gtx1070/6.jpg', 'images/hpomen15-i7-8eme-16-gtx1070/2.jpg', 'images/hpomen15-i7-8eme-16-gtx1070/3.jpg','images/hpomen15-i7-8eme-16-gtx1070/4.jpg','images/hpomen15-i7-8eme-16-gtx1070/5.jpg','images/hpomen15-i7-8eme-16-gtx1070/1.jpg'],    // ← صور متعددة (يدعم حتى 8)
-    video:'images/hpomen15-i7-8eme-16-gtx1070/V1.MP4', // ← فيديو اختياري: YouTube URL أو رابط mp4 مباشر
+    video:'images/hpomen15-i7-8eme-16-gtx1070/V1.mp4', // ← فيديو اختياري: YouTube URL أو رابط mp4 مباشر
     flag:'HOT', rating:4.9, reviews:128, stock:true,
     desc:'The HP OMEN 15.6 is a powerful 2018-era gaming laptop designed to deliver desktop-caliber performance on the go. Featuring a 6-core Intel processor, dedicated NVIDIA graphics, and a high-refresh-rate display with G-Sync, this machine easily handles modern AAA gaming and demanding multitasking. Its sleek design, customizable RGB lighting, and advanced cooling system make it a standout choice for gamers seeking both performance and style.',
     specs:{CPU:'Intel Core i7-8750H',RAM:'16GB DDR4',GPU:'NVIDIA GTX 1070 8GB',Storage:'512 GB NVMe + 1 TB HDD',Display:'15.6" FHD 144Hz G-Sync',Battery:'70Wh',Ports:'USB-C, HDMI, Mini DisplayPort, Ethernet'}
