@@ -29,31 +29,34 @@ const CATS = [
 // ============================================================
 const PRODS = [
   {
-    id:1, name:'RTX 4090 Gaming Beast Pro', brand:'Custom Build', cat:'Gaming PCs',
-    price:299000, orig:380000,
-    icon:'🖥️',
-    img:'images/rtx4090-beast.jpg',       // ← صورة اختيارية
+    id:1, name:'HP OMEN', brand:'HP', cat:'Gaming PCs',
+    price:68000, orig:120000,
+    icon:'',
+    imgs:['images/hpomen15-i7-8eme-16-gtx1070/6.jpg', 'images/hpomen15-i7-8eme-16-gtx1070/2.jpg', 'images/hpomen15-i7-8eme-16-gtx1070/3.jpg','images/hpomen15-i7-8eme-16-gtx1070/4.jpg','images/hpomen15-i7-8eme-16-gtx1070/5.jpg','images/hpomen15-i7-8eme-16-gtx1070/1.jpg'],    // ← صور متعددة (يدعم حتى 8)
+    video:'images/hpomen15-i7-8eme-16-gtx1070/V1.MP4', // ← فيديو اختياري: YouTube URL أو رابط mp4 مباشر
     flag:'HOT', rating:4.9, reviews:128, stock:true,
-    desc:'Ultimate gaming powerhouse with Intel Core i9-14900K, 64GB DDR5 RAM, 2TB NVMe SSD, and NVIDIA RTX 4090 24GB. Ready for 4K gaming at maximum settings on every title.',
-    specs:{CPU:'Intel Core i9-14900K',RAM:'64GB DDR5 6000MHz',GPU:'NVIDIA RTX 4090 24GB',Storage:'2TB Samsung 990 Pro NVMe',PSU:'1000W 80+ Gold',Case:'Lian Li PC-O11D'}
+    desc:'The HP OMEN 15.6 is a powerful 2018-era gaming laptop designed to deliver desktop-caliber performance on the go. Featuring a 6-core Intel processor, dedicated NVIDIA graphics, and a high-refresh-rate display with G-Sync, this machine easily handles modern AAA gaming and demanding multitasking. Its sleek design, customizable RGB lighting, and advanced cooling system make it a standout choice for gamers seeking both performance and style.',
+    specs:{CPU:'Intel Core i7-8750H',RAM:'16GB DDR4',GPU:'NVIDIA GTX 1070 8GB',Storage:'512 GB NVMe + 1 TB HDD',Display:'15.6" FHD 144Hz G-Sync',Battery:'70Wh',Ports:'USB-C, HDMI, Mini DisplayPort, Ethernet'}
   },
   {
-    id:2, name:'ASUS ROG Zephyrus G16', brand:'ASUS', cat:'Laptops',
-    price:195000, orig:225000,
+    id:2, name:'HP EliteBook 850 G3', brand:'HP', cat:'Laptops',
+    price:39000, orig:42000,
     icon:'💻',
-    img:'images/asus-rog-zephyrus.jpg',
-    flag:'NEW', rating:4.8, reviews:64, stock:true,
-    desc:'The ultimate gaming laptop with RTX 4080, Core i9, 240Hz WQHD display, and 90Wh battery for all-day gaming sessions.',
-    specs:{CPU:'Intel Core i9-13980HX',RAM:'32GB DDR5',GPU:'RTX 4080 16GB',Display:'16" QHD+ 240Hz',Storage:'1TB NVMe SSD',Battery:'90Wh'}
+    imgs:['images/HPEliteBook850G3/1.jpg', 'images/HPEliteBook850G3/2.jpg', 'images/HPEliteBook850G3/3.jpg','images/HPEliteBook850G3/4.jpg','images/HPEliteBook850G3/5.jpg'],         
+    video:'images/HPEliteBook850G3/v1.mp4',
+    flag:'CABA', rating:4.8, reviews:64, stock:true,
+    desc:'The computer is an HP EliteBook 850 G3 running Windows 10 Home 64-bit (version 19045) in French. It is powered by an Intel Core i5-6200U processor operating at 2.30 GHz with 2 cores and 4 threads, providing reliable performance for everyday computing and office tasks. The system includes 8 GB of RAM, allowing smooth multitasking and efficient handling of common applications. Graphics are provided by the integrated Intel HD Graphics 520, which supports DirectX 12 and offers 128 MB of dedicated video memory with up to 3.8 GB of shared memory, making it suitable for multimedia, web browsing, and light graphical workloads. The laptop uses BIOS version N75 01.16 and supports the WDDM 2.1 driver model, ensuring compatibility with modern Windows graphics features. Overall, this configuration is a dependable business-class laptop designed for productivity, internet browsing, office applications, programming, video conferencing, and other everyday computing needs.',
+    specs:{CPU:'Intel Core i5-6200U',RAM:'8GB DDR4',GPU:'INTEL UHD Graphics 520',Display:'15.6" FHD',Storage:'128GB NVMe SSD',Battery:'46Wh'}
   },
   {
-    id:3, name:'iPhone 15 Pro Max 512GB', brand:'Apple', cat:'Smartphones',
-    price:178000, orig:198000,
-    icon:'📱',
-    img:'images/iphone15-pro-max.jpg',
-    flag:'SALE', rating:4.9, reviews:312, stock:true,
-    desc:'The most powerful iPhone ever with A17 Pro chip, titanium design, and 48MP camera system with 5x optical zoom.',
-    specs:{Chip:'Apple A17 Pro',RAM:'8GB',Storage:'512GB',Display:'6.7" Super Retina XDR',Camera:'48MP + 12MP + 12MP',Battery:'4422mAh'}
+    id:3, name:'iPhone XR 64GB', brand:'Apple', cat:'Smartphones',
+    price:38000, orig:42000,
+    icon:'',
+    img:'images/IPHONEXR64GB82%/1.jpeg',
+    video:'images/IPHONEXR64GB82%/v1.mp4',
+    flag:'CABA', rating:4.9, reviews:312, stock:true,
+    desc:`L'iPhone XR 64 Go dispose d'un écran Liquid Retina de 6,1 pouces, d'une puce A12 Bionic et de 64 Go de stockage.Il est équipé d'un appareil photo arrière de 12 MP, d'une caméra avant de 7 MP avec Face ID.Il prend en charge la 4G, la recharge sans fil et est résistant à l'eau (IP67).`,
+    specs:{Chip:'Puce Apple A12 Bionic',RAM:'3GB',Storage:'64GB',Display:'6,1 pouces Liquid Retina HD (LCD), résolution 1792 × 828 pixels',Camera:'12 MP (grand-angle) avec stabilisation optique+7 MP TrueDepth avec Face ID',Battery:'16 heures de lecture vidéo, recharge rapide et recharge sans fil Qi 2942 mAh',EtatdeBatterie:'82%'}
   },
   {
     id:4, name:'Samsung Galaxy S24 Ultra', brand:'Samsung', cat:'Smartphones',
@@ -65,22 +68,36 @@ const PRODS = [
     specs:{Chip:'Snapdragon 8 Gen 3',RAM:'12GB',Storage:'256GB',Display:'6.8" Dynamic AMOLED 2X',Camera:'200MP+50MP+10MP+12MP',Battery:'5000mAh'}
   },
   {
-    id:5, name:'MacBook Pro M3 Max 16"', brand:'Apple', cat:'Laptops',
-    price:265000, orig:290000,
+    id:5, name:'ThinkPad L13 Gen 2"', brand:'Lenovo', cat:'Laptops',
+    price:65000, orig:75000,
     icon:'💻',
-    img:'images/macbook-pro-m3-max.jpg',
-    flag:'HOT', rating:5.0, reviews:97, stock:true,
-    desc:'The most powerful MacBook Pro ever with M3 Max chip. Extraordinary performance for creatives and professionals.',
-    specs:{Chip:'Apple M3 Max',RAM:'48GB Unified',Storage:'1TB SSD',Display:'16.2" Liquid Retina XDR',Battery:'100Wh',Ports:'3x Thunderbolt 4, HDMI, SD'}
+    imgs:['images/lenovothinkpadl13gen2/3.jpg','images/lenovothinkpadl13gen2/2.jpg','images/lenovothinkpadl13gen2/1.jpg'],
+    flag:'CABA', rating:5.0, reviews:97, stock:true,
+    desc:'The most powerful ThinkPad ever with M3 Max chip. Extraordinary performance for creatives and professionals.',
+    specs:{Chip:'INTEL CORE I5-1135G7',GPU:'Intel Iris Xe Graphics',RAM:'8GB DDR 4',Storage:'256GB SSD',Display:'14.3" FHD',Battery:'46Wh',Ports:`2 ports USB 3.2 Gen 1 Type A (toujours alimentés)`}
   },
   {
-    id:6, name:'LG UltraGear 27" 4K 144Hz', brand:'LG', cat:'Monitors',
-    price:52000, orig:64000,
-    icon:'🖵',
-    img:'images/lg-ultragear-27.jpg',
-    flag:'SALE', rating:4.6, reviews:78, stock:true,
-    desc:'IPS 4K gaming monitor with 144Hz refresh rate, G-Sync compatible, and 1ms GtG response time for ultra-smooth gaming.',
-    specs:{Size:'27 inch',Resolution:'3840x2160 (4K)',Panel:'Nano IPS',Refresh:'144Hz',Response:'1ms GtG',Connectors:'2x HDMI 2.1, DisplayPort 1.4'}
+    id:6,name:'Dell Precision 3540',brand:'Dell',cat:'Laptops',
+    price:65000,orig:75000,
+    icon:'💻',
+    imgs:[
+      'images/dellprecision3540/1.jpg',
+      'images/dellprecision3540/2.jpg',
+      'images/dellprecision3540/3.jpg',
+      'images/dellprecision3540/4.jpg',
+      'images/dellprecision3540/5.jpg',
+    ],
+    flag:'CABA',rating:5.0,reviews:97,stock:true,
+    desc:'Dell Precision 3540 is a professional mobile workstation designed for engineering, design, programming, and business users. Powered by an Intel Core i7-8565U processor with dedicated AMD Radeon Pro WX 2100 graphics, it delivers excellent performance for CAD applications, photo editing, multitasking, and everyday productivity while maintaining solid battery life and premium build quality.',
+    specs:{
+      CPU:'Intel Core i7-8565U',
+      GPU:'AMD Radeon Pro WX 2100 2GB + Intel UHD Graphics 620',
+      RAM:'16GB DDR4',
+      Storage:'256GB NVMe SSD',
+      Display:'15.6" FHD',
+      Battery:'68Wh',
+      Ports:'USB-C, 3x USB 3.1, HDMI, RJ-45, SD Card Reader'
+    }
   },
   {
     id:7, name:'HyperX Alloy Origins 65', brand:'HyperX', cat:'Keyboards',
@@ -110,14 +127,35 @@ const PRODS = [
     specs:{Driver:'30mm',Frequency:'4Hz-40,000Hz',ANC:'Auto Optimizing',Battery:'30 hours',Charging:'USB-C fast charge',Weight:'250g'}
   },
   {
-    id:10, name:'RTX 4070 Ti Gaming OC', brand:'ASUS', cat:'Components',
-    price:68000, orig:78000,
-    icon:'🔧',
-    img:'images/rtx4070ti-asus.jpg',
-    flag:'NEW', rating:4.7, reviews:89, stock:true,
-    desc:'ASUS TUF Gaming RTX 4070 Ti OC Edition with military-grade capacitors for extreme stability during long sessions.',
-    specs:{VRAM:'12GB GDDR6X',Base:'2310 MHz',Boost:'2760 MHz',Power:'285W TDP',Connectors:'3x DP 1.4a, HDMI 2.1',Cooling:'Triple Fan'}
-  },
+    id:10,
+    name:'Nacon Revolution Unlimited Pro Controller',
+    brand:'Nacon',
+    cat:'Accessories',
+    price:18000,
+    orig:22000,
+    icon:'🎮',
+    imgs:[
+      'images/naconrevolutionunlimited/1.jpg',
+      'images/naconrevolutionunlimited/2.jpg',
+      'images/naconrevolutionunlimited/3.jpg',
+      'images/naconrevolutionunlimited/4.jpg',
+      'images/naconrevolutionunlimited/5.jpg',
+    ],
+    video:'images/naconrevolutionunlimited/v2.mp4',
+    flag:'HOT',
+    rating:4.8,
+    reviews:85,
+    stock:true,
+    desc:'The Nacon Revolution Unlimited Pro Controller is a premium professional gaming controller designed for PlayStation 4 and PC. It features customizable profiles, programmable shortcut buttons, interchangeable thumbsticks, adjustable weights, wired and wireless connectivity, and a premium carrying case for competitive gamers.',
+    specs:{
+      Compatibility:'PS4 / PC',
+      Connectivity:'Bluetooth & USB-C',
+      Battery:'Rechargeable',
+      Profiles:'4 Custom Profiles',
+      Buttons:'Programmable Shortcut Buttons',
+      Features:'Interchangeable Weights, Replaceable Thumbsticks, Hard Carrying Case'
+    }
+},
   {
     id:11, name:'Razer BlackWidow V4 Pro', brand:'Razer', cat:'Keyboards',
     price:14500, orig:17000,
@@ -128,40 +166,51 @@ const PRODS = [
     specs:{Layout:'Full Size',Switches:'Razer Yellow Linear',Wireless:'2.4GHz + Bluetooth',Battery:'200 hours',Backlight:'Chroma RGB',Build:'Aluminum alloy'}
   },
   {
-    id:12, name:'Xiaomi 14 Pro 256GB', brand:'Xiaomi', cat:'Smartphones',
-    price:88000, orig:98000,
-    icon:'📱',
-    img:'images/xiaomi-14-pro.jpg',
-    flag:'NEW', rating:4.5, reviews:123, stock:false,
-    desc:'Leica co-engineered cameras with Snapdragon 8 Gen 3 and 120W HyperCharge technology.',
-    specs:{Chip:'Snapdragon 8 Gen 3',RAM:'12GB',Storage:'256GB',Display:'6.73" LTPO AMOLED 120Hz',Camera:'Leica 50MP + 50MP + 50MP',Charging:'120W HyperCharge'}
-  },
-  {
-    id:13, name:'wiiiiw', brand:'Xiaomi', cat:'Smartphones',
-    price:88000, orig:98000,
-    icon:'📱',
-    img:'',                               // ← فارغ = يرجع للـ emoji تلقائياً
-    flag:'HOT', rating:4.5, reviews:123, stock:false,
-    desc:'Leica co-engineered cameras with Snapdragon 8 Gen 3 and 120W HyperCharge technology.',
-    specs:{Chip:'Snapdragon 8 Gen 3',RAM:'12GB',Storage:'256GB',Display:'6.73" LTPO AMOLED 120Hz',Camera:'Leica 50MP + 50MP + 50MP',Charging:'120W HyperCharge'}
-  },
-  {
     id:14,name:'LENOVO YOGA BOOK 9I',brand:'LENOVO',cat:'Laptops',
     price:280000,orig:300000,
     icon:'', // ← رابط صورة خارجي
-    imgs:['images/download.jpg','images/l2.jpg','images/L3.jpg','images/L4.jpg'],
-    flag:'HOT', rating:4.5, reviews:123, stock:true,
+    imgs:['images/yogabook9i/1.jpg','images/yogabook9i/2.jpg','images/yogabook9i/8.jpg','images/yogabook9i/4.jpg' , 'images/yogabook9i/5.jpg','images/yogabook9i/6.jpg','images/yogabook9i/7.jpg','images/yogabook9i/8.jpg' ],
+    video:'images/yogabook9i/v1.mp4',
+    flag:'NEW', rating:4.5, reviews:123, stock:true,
     desc:'The world’s first full dual-screen OLED, multi-mode laptopTwo stunning 13.3″ PureSight OLED displays for versatile usePowered by 13th Gen Intel® Core™ processors and the Intel® Evo™ platformDetachable Bluetooth™ keyboard, stylus pen, & folio stand includedCarbon-neutral construction & eco-friendly packagingLimitless possibilities & incredible entertainment with Dolby Atmos® & Bowers & Wilkins speakers',
-    specs:{CPU:'13th Gen Intel® Core™ i7',RAM:'16GB LPDDR5',GPU:'Intel® Iris® Xe Graphics',Storage:'1TB PCIe SSD',Display:'2x 13.3" PureSight OLED 4K',Battery:'15 hours',Weight:'1.5kg'}
+    specs:{CPU:'Intel® Core™ i7 13th Gen',RAM:'16GB LPDDR5',GPU:'Intel® Iris® Xe Graphics',Storage:'1TB PCIe SSD',Display:'2x 13.3" PureSight OLED 4K',Battery:'15 hours',Weight:'1.5kg'}
   },
 ];
+
+// ============================================================
+// HELPER — يحول YouTube URL لـ embed
+// ============================================================
+function getYouTubeId(url) {
+  if (!url) return null;
+  const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+
+function buildVideoEmbed(url) {
+  if (!url) return '';
+  const ytId = getYouTubeId(url);
+  if (ytId) {
+    return `<iframe
+      src="https://www.youtube.com/embed/${ytId}"
+      title="Product Video"
+      frameborder="0"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allowfullscreen
+      style="width:100%;height:100%;border-radius:var(--r2);"
+    ></iframe>`;
+  }
+  // رابط mp4 مباشر
+  return `<video controls style="width:100%;height:100%;border-radius:var(--r2);object-fit:contain;background:#000;">
+    <source src="${url}">
+  </video>`;
+}
 
 // ============================================================
 // HELPER — يعرض الصورة أو الـ emoji كـ fallback
 // ============================================================
 function prodMedia(p, size = 'card') {
   // Support both p.img (string) and p.imgs (array) — use first image available
-  const imgSrc = p.img || (Array.isArray(p.imgs) && p.imgs.length ? p.imgs[0] : '');
+  const imgSrc = (Array.isArray(p.imgs) && p.imgs.length ? p.imgs[0] : '') || p.img || '';
   if (imgSrc) {
     const styles = size === 'card'
       ? 'width:100%;height:100%;object-fit:contain;position:relative;z-index:1;'
@@ -358,7 +407,7 @@ function goSearch() {
 }
 
 // ============================================================
-// PRODUCT DETAIL — gallery بالصورة الحقيقية
+// PRODUCT DETAIL — gallery بالصورة الحقيقية + فيديو
 // ============================================================
 function openProd(id) {
   const p = PRODS.find(x => x.id === id);
@@ -366,9 +415,9 @@ function openProd(id) {
   curProd = p;
   const disc = p.orig ? Math.round((1 - p.price / p.orig) * 100) : 0;
 
-  // بناء الـ gallery: support both p.img (string) and p.imgs (array)
+  // بناء الـ gallery: support both p.img (string) and p.imgs (array) — حتى 8 صور
   const galleryImgs = Array.isArray(p.imgs) && p.imgs.length
-    ? p.imgs
+    ? p.imgs.slice(0, 8)
     : p.img ? [p.img] : [];
 
   const firstImg = galleryImgs[0] || '';
@@ -383,16 +432,21 @@ function openProd(id) {
       /><span id="det-main-icon" style="display:none;font-size:120px;">${p.icon}</span>`
     : `<span style="font-size:120px;">${p.icon}</span>`;
 
-  // Build thumbs from actual gallery images, pad to 4 if needed
-  const thumbImgs = [...galleryImgs];
-  while (thumbImgs.length < 4) thumbImgs.push(firstImg || '');
-  const thumbs = thumbImgs.slice(0, 4).map((src, i) => `
+  // Thumbs — حتى 8 صور مع scroll أفقي
+  const thumbs = galleryImgs.map((src, i) => `
     <div class="det-thumb ${i === 0 ? 'on' : ''}" onclick="switchDetImg('${src}',this)">
       ${src
-        ? `<img src="${src}" alt="" style="width:100%;height:100%;object-fit:contain;" onerror="this.outerHTML='<span>${p.icon}</span>'">`
-        : p.icon
+        ? `<img src="${src}" alt="" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none'">`
+        : `<span style="font-size:22px">${p.icon}</span>`
       }
     </div>`).join('');
+
+  // قسم الفيديو — يظهر فقط إذا كان p.video موجود
+  const videoSection = p.video ? `
+    <div class="det-video-section">
+      <div class="det-video-label">🎬 PRODUCT VIDEO</div>
+      <div class="det-video-wrap">${buildVideoEmbed(p.video)}</div>
+    </div>` : '';
 
   document.getElementById('det-content').innerHTML = `
     <div class="back-link" onclick="nav('shop')">← Back</div>
@@ -400,6 +454,7 @@ function openProd(id) {
       <div class="det-gallery">
         <div class="det-main-img">${mainMedia}</div>
         <div class="det-thumbs">${thumbs}</div>
+        ${videoSection}
       </div>
       <div>
         <div class="det-brand">${p.brand}</div>
