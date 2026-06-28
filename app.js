@@ -83,9 +83,9 @@ const PRODS = [
     imgs:[
       'images/dellprecision3540/1.jpg',
       'images/dellprecision3540/2.jpg',
-      'images/dellprecision3540/3.jpg',
-      'images/dellprecision3540/4.jpg',
-      'images/dellprecision3540/5.jpg',
+      'images/dellprecision3540/3.JPG',
+      'images/dellprecision3540/4.JPG',
+      'images/dellprecision3540/5.JPG',
     ],
     flag:'CABA',rating:5.0,reviews:97,stock:true,
     desc:'Dell Precision 3540 is a professional mobile workstation designed for engineering, design, programming, and business users. Powered by an Intel Core i7-8565U processor with dedicated AMD Radeon Pro WX 2100 graphics, it delivers excellent performance for CAD applications, photo editing, multitasking, and everyday productivity while maintaining solid battery life and premium build quality.',
