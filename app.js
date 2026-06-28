@@ -52,8 +52,8 @@ const PRODS = [
     id:3, name:'iPhone XR 64GB', brand:'Apple', cat:'Smartphones',
     price:38000, orig:42000,
     icon:'',
-    img:'images/IPHONEXR64GB82%/1.jpeg',
-    video:'images/IPHONEXR64GB82%/v1.mp4',
+    img:'images/IPHONEXR64GB82/1.jpeg',
+    video:'images/IPHONEXR64GB82/v1.mp4',
     flag:'CABA', rating:4.9, reviews:312, stock:true,
     desc:`L'iPhone XR 64 Go dispose d'un écran Liquid Retina de 6,1 pouces, d'une puce A12 Bionic et de 64 Go de stockage.Il est équipé d'un appareil photo arrière de 12 MP, d'une caméra avant de 7 MP avec Face ID.Il prend en charge la 4G, la recharge sans fil et est résistant à l'eau (IP67).`,
     specs:{Chip:'Puce Apple A12 Bionic',RAM:'3GB',Storage:'64GB',Display:'6,1 pouces Liquid Retina HD (LCD), résolution 1792 × 828 pixels',Camera:'12 MP (grand-angle) avec stabilisation optique+7 MP TrueDepth avec Face ID',Battery:'16 heures de lecture vidéo, recharge rapide et recharge sans fil Qi 2942 mAh',EtatdeBatterie:'82%'}
