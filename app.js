@@ -1,7 +1,7 @@
 // ============================================================
 // CONFIG — Google Sheets URL hardcoded
 // ============================================================
-const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxEF2bFjJz0HANkbM7H_IyeRQ87Tcgbp1uEKd_1U81dpb-vJnyHtr_eFRVmX_6qg-KC/exec';
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwpaURjFDjMbv7N4hDfXvrFCuSKtFz3C9-e_3HHdbCVuZ2xddlC3vI6I6QIbfA5yo5g/exec';
 
 function getWaNumber() {
   return (localStorage.getItem('kt-wa') || '213558455695').replace(/\D/g,'');
@@ -310,12 +310,15 @@ window.addEventListener('popstate', function(event) {
 function renderCats() {
   const g = document.getElementById('cats-grid');
   if (!g) return;
-  g.innerHTML = CATS.map(c => `
+  g.innerHTML = CATS.map(c => {
+    const realCount = PRODS.filter(p => p.cat === c.name).length;
+    return `
     <div class="cat-card" onclick="nav('shop','${c.name}')">
       <span class="cat-icon">${c.icon}</span>
       <div class="cat-name">${c.name}</div>
-      <div class="cat-count">${c.count}</div>
-    </div>`).join('');
+      <div class="cat-count">${realCount}</div>
+    </div>`;
+  }).join('');
 }
 
 // ============================================================
@@ -459,9 +462,8 @@ function openProd(id) {
       <div>
         <div class="det-brand">${p.brand}</div>
         <h1 class="det-h1">${p.name}</h1>
-        <div class="det-rating">
-          <span style="color:#F5C842;font-size:16px">${'★'.repeat(Math.floor(p.rating))}</span>
-          <span style="color:var(--text2);font-size:13px;margin-left:6px;">${p.rating} · ${p.reviews} reviews</span>
+        <div class="det-rating" id="det-live-rating">
+          ${buildLiveRatingHTML(p.id, [])}
         </div>
         <div class="${p.stock ? 'stk-badge in-stk' : 'stk-badge out-stk'}">${p.stock ? '✅ In Stock' : '❌ Out of Stock'}</div>
         <div class="det-price-row">
@@ -490,11 +492,16 @@ function openProd(id) {
         </div>
       </div>
     </div>
+    <div style="margin-top:60px;" id="reviews-anchor">
+      ${buildReviewsSection(p.id)}
+    </div>
     <div style="margin-top:60px;">
       <h2 style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:22px;">RELATED PRODUCTS</h2>
       <div class="prods-grid">${PRODS.filter(x => x.cat === p.cat && x.id !== p.id).slice(0, 4).map(prodCard).join('')}</div>
     </div>`;
   nav('product');
+  // تحميل reviews من Google Sheets بعد فتح الصفحة
+  loadReviewsForProduct(p.id);
 }
 
 function switchDetImg(src, thumbEl) {
@@ -1107,3 +1114,329 @@ function rotHeroIco() {
 
 function toggleMob() { document.getElementById('mob-menu').classList.toggle('open'); }
 function closeMob()  { document.getElementById('mob-menu').classList.remove('open'); }
+// ============================================================
+// REVIEWS SYSTEM — Google Sheets backend
+// ============================================================
+
+// URL نفسو تاع الطلبات — Apps Script يفرق بين action=reviews و action=order
+const REVIEWS_SHEETS_URL = SHEETS_URL;
+
+// ---- FETCH reviews من Google Sheets ----
+async function fetchReviews(productId) {
+  try {
+    const url = REVIEWS_SHEETS_URL + '?action=getReviews&productId=' + productId + '&t=' + Date.now();
+    const res  = await fetch(url);
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+  } catch (e) {
+    console.warn('fetchReviews error:', e);
+    return [];
+  }
+}
+
+// ---- POST review لـ Google Sheets ----
+async function postReview(reviewData) {
+  try {
+    await fetch(REVIEWS_SHEETS_URL, {
+      method:  'POST',
+      mode:    'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body:    JSON.stringify({ action: 'addReview', ...reviewData }),
+    });
+    return { success: true };
+  } catch (e) {
+    return { success: false };
+  }
+}
+
+// ---- حساب المتوسط الحقيقي من قائمة reviews ----
+function calcLiveRating(productId, reviews) {
+  const p = PRODS.find(x => x.id === productId);
+  if (!p) return { avg: 0, total: 0, dist: null };
+
+  if (!reviews || reviews.length === 0) {
+    return { avg: p.rating, total: p.reviews, dist: null };
+  }
+
+  const seedWeight = p.reviews;
+  const seedSum    = p.rating * seedWeight;
+  const userSum    = reviews.reduce((s, r) => s + Number(r.rating), 0);
+  const userCount  = reviews.length;
+  const totalCount = seedWeight + userCount;
+  const avg        = (seedSum + userSum) / totalCount;
+
+  const dist = [5, 4, 3, 2, 1].map(star => ({
+    star,
+    count: reviews.filter(r => Number(r.rating) === star).length
+  }));
+
+  return { avg: Math.round(avg * 10) / 10, total: totalCount, dist };
+}
+
+// ---- HTML النجوم ----
+function starsHTML(rating, size = 16) {
+  const full  = Math.floor(rating);
+  const half  = rating % 1 >= 0.5 ? 1 : 0;
+  const empty = 5 - full - half;
+  const s     = `font-size:${size}px;`;
+  return `<span style="${s}color:#F5C842">${'★'.repeat(full)}${'⯨'.repeat(half)}</span><span style="${s}color:var(--border)">${'★'.repeat(empty)}</span>`;
+}
+
+// ---- HTML التقييم المباشر في هيدر المنتج (يُحدَّث بعد تحميل reviews) ----
+function buildLiveRatingHTML(productId, reviews) {
+  const { avg, total } = calcLiveRating(productId, reviews);
+  return `
+    ${starsHTML(avg, 16)}
+    <span class="live-avg">${avg.toFixed(1)}</span>
+    <span class="live-count">(${total.toLocaleString('fr-DZ')} reviews)</span>`;
+}
+
+// ---- بناء قسم Reviews ----
+function buildReviewsSection(productId, reviews = []) {
+  const { avg, total, dist } = calcLiveRating(productId, reviews);
+
+  const distHTML = dist
+    ? dist.map(d => {
+        const pct = reviews.length > 0 ? Math.round(d.count / reviews.length * 100) : 0;
+        return `
+          <div class="rev-bar-row">
+            <span class="rev-bar-label">${d.star}★</span>
+            <div class="rev-bar-track">
+              <div class="rev-bar-fill" style="width:${pct}%"></div>
+            </div>
+            <span class="rev-bar-count">${d.count}</span>
+          </div>`;
+      }).join('')
+    : `<div style="font-size:12px;color:var(--text3)">Be the first to leave a review!</div>`;
+
+  const SHOW_INIT = 4;
+  const reviewsHTML = reviews.length === 0
+    ? `<div class="reviews-empty">
+        <div class="rev-empty-ico">💬</div>
+        <p>No reviews yet — be the first to share your experience!</p>
+      </div>`
+    : reviews.slice().reverse().slice(0, SHOW_INIT).map(revCardHTML).join('') +
+      (reviews.length > SHOW_INIT
+        ? `<button class="rev-load-more" onclick="loadMoreReviews(${productId}, ${SHOW_INIT})">
+            LOAD MORE REVIEWS (${reviews.length - SHOW_INIT} more)
+           </button>`
+        : '');
+
+  return `
+    <div class="reviews-section" id="reviews-section-${productId}">
+      <h2 class="reviews-section-title">
+        CUSTOMER REVIEWS
+        <span class="rev-total-badge" id="rev-total-badge-${productId}">${total} reviews</span>
+      </h2>
+
+      <div class="reviews-summary">
+        <div class="rev-avg-block">
+          <div class="rev-avg-num" id="rev-avg-num-${productId}">${avg.toFixed(1)}</div>
+          <div class="rev-avg-stars">${starsHTML(avg, 18)}</div>
+          <div class="rev-avg-count">out of 5</div>
+        </div>
+        <div class="rev-bars" id="rev-bars-${productId}">
+          ${distHTML}
+        </div>
+      </div>
+
+      <!-- Write Review -->
+      <div class="write-review-wrap">
+        <div class="write-review-title">✍️ WRITE A REVIEW</div>
+        <div class="star-picker" id="star-picker-${productId}"
+          onclick="pickStar(event,${productId})"
+          onmouseover="hoverStar(event,${productId})"
+          onmouseout="resetHover(${productId})">
+          <span class="sp-star" data-v="1">★</span>
+          <span class="sp-star" data-v="2">★</span>
+          <span class="sp-star" data-v="3">★</span>
+          <span class="sp-star" data-v="4">★</span>
+          <span class="sp-star" data-v="5">★</span>
+        </div>
+        <div class="rev-rating-label" id="rev-rating-lbl-${productId}">Select a rating</div>
+        <div class="rev-form-row">
+          <input class="rev-name-in" id="rev-name-${productId}" placeholder="Your name *" maxlength="50"/>
+          <input class="rev-name-in" id="rev-title-${productId}" placeholder="Review title (optional)" maxlength="80"/>
+        </div>
+        <textarea class="rev-comment-in" id="rev-comment-${productId}"
+          placeholder="Share your experience with this product... *" maxlength="600"></textarea>
+        <button class="rev-submit-btn" onclick="submitReview(${productId})">POST REVIEW →</button>
+      </div>
+
+      <!-- Loading indicator -->
+      <div id="rev-loading-${productId}" style="text-align:center;padding:20px;color:var(--text3);font-size:12px;font-family:'JetBrains Mono',monospace;display:none;">
+        ⏳ Loading reviews...
+      </div>
+
+      <!-- Reviews List -->
+      <div class="reviews-list" id="rev-list-${productId}">
+        ${reviewsHTML}
+      </div>
+    </div>`;
+}
+
+// ---- HTML كارت review واحد ----
+function revCardHTML(r) {
+  const initial = (r.name || '?')[0].toUpperCase();
+  const rating  = Number(r.rating) || 0;
+  const dateStr = r.date || '';
+  return `
+    <div class="rev-card" id="rev-card-${r.id}">
+      <div class="rev-card-header">
+        <div class="rev-card-left">
+          <div class="rev-avatar">${initial}</div>
+          <div>
+            <div class="rev-card-name">${r.name}</div>
+            <div class="rev-card-stars">
+              <span style="color:#F5C842">${'★'.repeat(rating)}</span><span style="color:var(--border)">${'★'.repeat(5 - rating)}</span>
+            </div>
+          </div>
+        </div>
+        <div class="rev-card-date">${dateStr}</div>
+      </div>
+      ${r.title ? `<div style="font-weight:600;font-size:13px;margin-bottom:6px;color:var(--text)">${r.title}</div>` : ''}
+      <div class="rev-card-comment">${r.comment}</div>
+    </div>`;
+}
+
+// ---- Cache للـ reviews (لتجنب طلبات متكررة) ----
+const _revCache = {};
+
+// ---- فتح صفحة منتج: تحميل reviews من Sheets ----
+async function loadReviewsForProduct(productId) {
+  const loadEl = document.getElementById('rev-loading-' + productId);
+  const listEl = document.getElementById('rev-list-'    + productId);
+  if (loadEl) loadEl.style.display = 'block';
+  if (listEl) listEl.style.display = 'none';
+
+  const reviews = await fetchReviews(productId);
+  _revCache[productId] = reviews;
+
+  if (loadEl) loadEl.style.display = 'none';
+  if (listEl) listEl.style.display = 'flex';
+
+  // إعادة رسم قسم reviews بالكامل مع البيانات الحقيقية
+  const anchor = document.getElementById('reviews-anchor');
+  if (anchor) anchor.innerHTML = buildReviewsSection(productId, reviews);
+
+  // تحديث التقييم في هيدر المنتج
+  const liveRating = document.getElementById('det-live-rating');
+  if (liveRating) liveRating.innerHTML = buildLiveRatingHTML(productId, reviews);
+}
+
+// ---- STAR PICKER ----
+const _revState = {};
+function getRevState(pid) {
+  if (!_revState[pid]) _revState[pid] = { selected: 0 };
+  return _revState[pid];
+}
+
+function hoverStar(e, pid) {
+  const star = e.target.closest('.sp-star');
+  if (!star) return;
+  highlightStars(pid, parseInt(star.dataset.v), true);
+}
+
+function resetHover(pid) {
+  highlightStars(pid, getRevState(pid).selected, false);
+}
+
+function pickStar(e, pid) {
+  const star = e.target.closest('.sp-star');
+  if (!star) return;
+  const v = parseInt(star.dataset.v);
+  getRevState(pid).selected = v;
+  highlightStars(pid, v, false);
+  const labels = ['','Poor 😞','Fair 😐','Good 😊','Very Good 😄','Excellent ⭐'];
+  const lbl = document.getElementById('rev-rating-lbl-' + pid);
+  if (lbl) { lbl.textContent = labels[v]; lbl.classList.add('filled'); }
+}
+
+function highlightStars(pid, upTo, isHover) {
+  const picker = document.getElementById('star-picker-' + pid);
+  if (!picker) return;
+  picker.querySelectorAll('.sp-star').forEach(s => {
+    const v = parseInt(s.dataset.v);
+    s.classList.toggle('active', v <= upTo && !isHover);
+    s.classList.toggle('hover',  v <= upTo &&  isHover);
+  });
+}
+
+// ---- SUBMIT REVIEW ----
+async function submitReview(pid) {
+  const st      = getRevState(pid);
+  const nameEl  = document.getElementById('rev-name-'    + pid);
+  const cmtEl   = document.getElementById('rev-comment-' + pid);
+  const titleEl = document.getElementById('rev-title-'   + pid);
+  const btn     = document.querySelector('.rev-submit-btn');
+
+  let ok = true;
+  if (!st.selected) { toast('Please select a star rating ⭐', 'err'); ok = false; }
+  if (!nameEl?.value.trim()) {
+    nameEl?.classList.add('err');
+    nameEl?.addEventListener('input', () => nameEl.classList.remove('err'), { once: true });
+    ok = false;
+  }
+  if (!cmtEl?.value.trim()) {
+    cmtEl?.classList.add('err');
+    cmtEl?.addEventListener('input', () => cmtEl.classList.remove('err'), { once: true });
+    if (ok && st.selected) toast('Please write a comment ✍️', 'err');
+    ok = false;
+  }
+  if (!ok) { if (!st.selected || !nameEl?.value.trim()) toast('Please fill all required fields ⚠️', 'err'); return; }
+
+  // Disable button while sending
+  if (btn) { btn.disabled = true; btn.textContent = 'Posting...'; }
+
+  const now    = new Date();
+  const review = {
+    id:        'rev-' + Date.now(),
+    productId: pid,
+    productName: (PRODS.find(x => x.id === pid) || {}).name || '',
+    name:      nameEl.value.trim(),
+    title:     titleEl?.value.trim() || '',
+    comment:   cmtEl.value.trim(),
+    rating:    st.selected,
+    date:      now.toLocaleDateString('fr-DZ', { year:'numeric', month:'short', day:'numeric' }),
+    timestamp: now.toISOString(),
+  };
+
+  const result = await postReview(review);
+
+  // Reset form
+  nameEl.value = ''; cmtEl.value = '';
+  if (titleEl) titleEl.value = '';
+  getRevState(pid).selected = 0;
+  highlightStars(pid, 0, false);
+  const lbl = document.getElementById('rev-rating-lbl-' + pid);
+  if (lbl) { lbl.textContent = 'Select a rating'; lbl.classList.remove('filled'); }
+  if (btn) { btn.disabled = false; btn.textContent = 'POST REVIEW →'; }
+
+  // أضيف التعليق مؤقتاً للـ cache وأعيد الرسم (بدون انتظار Sheets)
+  if (!_revCache[pid]) _revCache[pid] = [];
+  _revCache[pid].push(review);
+
+  const anchor = document.getElementById('reviews-anchor');
+  if (anchor) anchor.innerHTML = buildReviewsSection(pid, _revCache[pid]);
+
+  const liveRating = document.getElementById('det-live-rating');
+  if (liveRating) liveRating.innerHTML = buildLiveRatingHTML(pid, _revCache[pid]);
+
+  toast(result.success ? 'Review posted! Thank you 🎉' : 'Posted locally — will sync when online', 'ok');
+}
+
+// ---- LOAD MORE ----
+function loadMoreReviews(pid, currentShown) {
+  const reviews  = (_revCache[pid] || []).slice().reverse();
+  const newCount = Math.min(currentShown + 4, reviews.length);
+  const list     = document.getElementById('rev-list-' + pid);
+  if (!list) return;
+  list.querySelector('.rev-load-more')?.remove();
+  list.insertAdjacentHTML('beforeend', reviews.slice(currentShown, newCount).map(revCardHTML).join(''));
+  if (newCount < reviews.length) {
+    list.insertAdjacentHTML('beforeend', `
+      <button class="rev-load-more" onclick="loadMoreReviews(${pid}, ${newCount})">
+        LOAD MORE REVIEWS (${reviews.length - newCount} more)
+      </button>`);
+  }
+}
