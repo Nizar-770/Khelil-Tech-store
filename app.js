@@ -281,28 +281,21 @@ document.addEventListener('DOMContentLoaded', () => {
 // NAVIGATION
 // ============================================================
 function nav(page, cat = '', pushToHistory = true) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-
-  // إعادة عنوان الصفحة الافتراضي عند الخروج من صفحة المنتج
-  if (page !== 'product') {
-    document.title = 'KHELIL TECH — Premium Electronics Store Algeria';
-  }
-
-  // صفحة المنتج — page='product', cat=productId (string)
-  if (page === 'product' && cat && !nav._openingProd) {
+  // صفحة المنتج — page='product', cat=productId
+  // openProd() يتكفل بعرض الصفحة وحفظ الـ URL مباشرة
+  if (page === 'product' && cat) {
     const prodId = parseInt(cat);
     const prod = PRODS.find(x => x.id === prodId);
     if (prod) {
-      nav._openingProd = true;
       openProd(prodId, pushToHistory);
-      nav._openingProd = false;
-      return;
     } else {
       nav('shop', '', pushToHistory);
-      return;
     }
+    return;
   }
 
+  document.title = 'KHELIL TECH — Premium Electronics Store Algeria';
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const pg = document.getElementById('page-' + page);
   if (!pg) return;
   pg.classList.add('active');
@@ -317,14 +310,12 @@ function nav(page, cat = '', pushToHistory = true) {
   if (page === 'wishlist') renderWishPage();
   if (page === 'admin')    renderAdm();
 
-  // حفظ الصفحة الحالية في تاريخ المتصفح
   if (pushToHistory) {
     const state = { page, cat };
     const url = '#' + page + (cat ? '/' + encodeURIComponent(cat) : '');
     history.pushState(state, '', url);
   }
 }
-nav._openingProd = false;
 
 // الرجوع للصفحة السابقة بزر Back
 window.addEventListener('popstate', function(event) {
@@ -548,7 +539,14 @@ function openProd(id, pushToHistory = true) {
       <div class="prods-grid">${PRODS.filter(x => x.cat === p.cat && x.id !== p.id).slice(0, 4).map(prodCard).join('')}</div>
     </div>
     <div style="margin-top:48px;" id="recently-viewed-section"></div>`;
-  nav('product', String(p.id), pushToHistory);
+
+  // عرض صفحة المنتج مباشرة — بدون circular call مع nav()
+  document.querySelectorAll('.page').forEach(pg => pg.classList.remove('active'));
+  document.getElementById('page-product').classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'instant' });
+  if (pushToHistory) {
+    history.pushState({ page: 'product', cat: String(p.id) }, '', '#product/' + p.id);
+  }
   // تحميل reviews من Google Sheets بعد فتح الصفحة
   loadReviewsForProduct(p.id);
   // عرض المنتجات المشاهدة مؤخراً (بدون المنتج الحالي)
