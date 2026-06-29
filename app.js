@@ -272,6 +272,22 @@ document.addEventListener('DOMContentLoaded', () => {
 // ============================================================
 function nav(page, cat = '', pushToHistory = true) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+
+  // صفحة المنتج — page='product', cat=productId (string)
+  if (page === 'product' && cat && !nav._openingProd) {
+    const prodId = parseInt(cat);
+    const prod = PRODS.find(x => x.id === prodId);
+    if (prod) {
+      nav._openingProd = true;
+      openProd(prodId, pushToHistory);
+      nav._openingProd = false;
+      return;
+    } else {
+      nav('shop', '', pushToHistory);
+      return;
+    }
+  }
+
   const pg = document.getElementById('page-' + page);
   if (!pg) return;
   pg.classList.add('active');
@@ -293,6 +309,7 @@ function nav(page, cat = '', pushToHistory = true) {
     history.pushState(state, '', url);
   }
 }
+nav._openingProd = false;
 
 // الرجوع للصفحة السابقة بزر Back
 window.addEventListener('popstate', function(event) {
@@ -412,7 +429,7 @@ function goSearch() {
 // ============================================================
 // PRODUCT DETAIL — gallery بالصورة الحقيقية + فيديو
 // ============================================================
-function openProd(id) {
+function openProd(id, pushToHistory = true) {
   const p = PRODS.find(x => x.id === id);
   if (!p) return;
   curProd = p;
@@ -499,7 +516,7 @@ function openProd(id) {
       <h2 style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:22px;">RELATED PRODUCTS</h2>
       <div class="prods-grid">${PRODS.filter(x => x.cat === p.cat && x.id !== p.id).slice(0, 4).map(prodCard).join('')}</div>
     </div>`;
-  nav('product');
+  nav('product', String(p.id), pushToHistory);
   // تحميل reviews من Google Sheets بعد فتح الصفحة
   loadReviewsForProduct(p.id);
 }
@@ -1179,7 +1196,10 @@ function starsHTML(rating, size = 16) {
   const half  = rating % 1 >= 0.5 ? 1 : 0;
   const empty = 5 - full - half;
   const s     = `font-size:${size}px;`;
-  return `<span style="${s}color:#F5C842">${'★'.repeat(full)}${'⯨'.repeat(half)}</span><span style="${s}color:var(--border)">${'★'.repeat(empty)}</span>`;
+  const halfStar = half
+    ? `<span style="${s}display:inline-block;position:relative;color:var(--border)">★<span style="position:absolute;left:0;top:0;width:50%;overflow:hidden;color:#F5C842">★</span></span>`
+    : '';
+  return `<span style="${s}color:#F5C842">${'★'.repeat(full)}</span>${halfStar}<span style="${s}color:var(--border)">${'★'.repeat(empty)}</span>`;
 }
 
 // ---- HTML التقييم المباشر في هيدر المنتج (يُحدَّث بعد تحميل reviews) ----
