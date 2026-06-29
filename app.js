@@ -3,6 +3,15 @@
 // ============================================================
 const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwpaURjFDjMbv7N4hDfXvrFCuSKtFz3C9-e_3HHdbCVuZ2xddlC3vI6I6QIbfA5yo5g/exec';
 
+// ============================================================
+// PROMO CODES CONFIG — عدل هنا فقط بدل ما تدخل في الكود
+// ============================================================
+const PROMO_CODES = {
+  'KHELIL5':  0.05,
+  'KHELIL10': 0.10,
+  'KHELIL20': 0.20,
+};
+
 function getWaNumber() {
   return (localStorage.getItem('kt-wa') || '213558455695').replace(/\D/g,'');
 }
@@ -209,8 +218,9 @@ function buildVideoEmbed(url) {
 // HELPER — يعرض الصورة أو الـ emoji كـ fallback
 // ============================================================
 function prodMedia(p, size = 'card') {
-  // Support both p.img (string) and p.imgs (array) — use first image available
   const imgSrc = (Array.isArray(p.imgs) && p.imgs.length ? p.imgs[0] : '') || p.img || '';
+  const iconSize = size === 'card' ? '64px' : '120px';
+  const fallbackHTML = `<span style="font-size:${iconSize};position:relative;z-index:1;">${p.icon}</span>`;
   if (imgSrc) {
     const styles = size === 'card'
       ? 'width:100%;height:100%;object-fit:contain;position:relative;z-index:1;'
@@ -219,10 +229,10 @@ function prodMedia(p, size = 'card') {
       src="${imgSrc}"
       alt="${p.name}"
       style="${styles}"
-      onerror="this.style.display='none';this.nextElementSibling.style.display='block';"
-    /><span style="display:none;font-size:${size==='card'?'64px':'120px'};position:relative;z-index:1;">${p.icon}</span>`;
+      onerror="this.replaceWith(Object.assign(document.createElement('span'),{style:'font-size:${iconSize};position:relative;z-index:1;',textContent:'${p.icon}'}));"
+    />`;
   }
-  return `<span style="font-size:${size==='card'?'64px':'120px'};position:relative;z-index:1;">${p.icon}</span>`;
+  return fallbackHTML;
 }
 
 // ============================================================
@@ -272,6 +282,11 @@ document.addEventListener('DOMContentLoaded', () => {
 // ============================================================
 function nav(page, cat = '', pushToHistory = true) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+
+  // إعادة عنوان الصفحة الافتراضي عند الخروج من صفحة المنتج
+  if (page !== 'product') {
+    document.title = 'KHELIL TECH — Premium Electronics Store Algeria';
+  }
 
   // صفحة المنتج — page='product', cat=productId (string)
   if (page === 'product' && cat && !nav._openingProd) {
@@ -431,8 +446,17 @@ function goSearch() {
 // ============================================================
 function openProd(id, pushToHistory = true) {
   const p = PRODS.find(x => x.id === id);
-  if (!p) return;
+  if (!p) { nav('shop', '', false); return; }
   curProd = p;
+
+  // تحديث عنوان الصفحة والـ meta description ديناميكياً
+  document.title = `${p.name} — KHELIL TECH`;
+  let metaDesc = document.querySelector('meta[name="description"]');
+  if (!metaDesc) { metaDesc = document.createElement('meta'); metaDesc.name = 'description'; document.head.appendChild(metaDesc); }
+  metaDesc.content = `${p.name} — ${p.brand} | ${p.price.toLocaleString('fr-DZ')} DA | Khelil Tech Algeria`;
+
+  // تسجيل المنتج في المشاهدات الأخيرة
+  addRecentlyViewed(id);
   const disc = p.orig ? Math.round((1 - p.price / p.orig) * 100) : 0;
 
   // بناء الـ gallery: support both p.img (string) and p.imgs (array) — حتى 8 صور
@@ -469,7 +493,14 @@ function openProd(id, pushToHistory = true) {
     </div>` : '';
 
   document.getElementById('det-content').innerHTML = `
-    <div class="back-link" onclick="nav('shop')">← Back</div>
+    <nav class="breadcrumb" aria-label="breadcrumb">
+      <span class="bc-item" onclick="nav('home')">Home</span>
+      <span class="bc-sep">›</span>
+      <span class="bc-item" onclick="nav('shop','${p.cat}')">${p.cat}</span>
+      <span class="bc-sep">›</span>
+      <span class="bc-item bc-current">${p.brand}</span>
+    </nav>
+    <div class="back-link" onclick="nav('shop','${p.cat}')">← Back to ${p.cat}</div>
     <div class="det-grid">
       <div class="det-gallery">
         <div class="det-main-img">${mainMedia}</div>
@@ -515,10 +546,13 @@ function openProd(id, pushToHistory = true) {
     <div style="margin-top:60px;">
       <h2 style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:22px;">RELATED PRODUCTS</h2>
       <div class="prods-grid">${PRODS.filter(x => x.cat === p.cat && x.id !== p.id).slice(0, 4).map(prodCard).join('')}</div>
-    </div>`;
+    </div>
+    <div style="margin-top:48px;" id="recently-viewed-section"></div>`;
   nav('product', String(p.id), pushToHistory);
   // تحميل reviews من Google Sheets بعد فتح الصفحة
   loadReviewsForProduct(p.id);
+  // عرض المنتجات المشاهدة مؤخراً (بدون المنتج الحالي)
+  renderRecentlyViewed(p.id);
 }
 
 function switchDetImg(src, thumbEl) {
@@ -527,6 +561,33 @@ function switchDetImg(src, thumbEl) {
   document.querySelectorAll('.det-thumb').forEach(t => t.classList.remove('on'));
   if (thumbEl) thumbEl.classList.add('on');
 }
+
+// ============================================================
+// RECENTLY VIEWED
+// ============================================================
+function addRecentlyViewed(id) {
+  let rv = JSON.parse(localStorage.getItem('kt-rv') || '[]');
+  rv = rv.filter(x => x !== id);  // نحذف إذا كان موجود
+  rv.unshift(id);                  // نضيفه في البداية
+  rv = rv.slice(0, 8);             // نحتفظ بـ 8 فقط
+  localStorage.setItem('kt-rv', JSON.stringify(rv));
+}
+
+function renderRecentlyViewed(currentId) {
+  const el = document.getElementById('recently-viewed-section');
+  if (!el) return;
+  const rv = JSON.parse(localStorage.getItem('kt-rv') || '[]');
+  const items = rv
+    .filter(id => id !== currentId)
+    .map(id => PRODS.find(x => x.id === id))
+    .filter(Boolean)
+    .slice(0, 4);
+  if (items.length === 0) { el.innerHTML = ''; return; }
+  el.innerHTML = `
+    <h2 style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:22px;">🕐 RECENTLY VIEWED</h2>
+    <div class="prods-grid">${items.map(prodCard).join('')}</div>`;
+}
+
 
 function chgQty(d) {
   const el = document.getElementById('det-qty');
@@ -697,10 +758,13 @@ function calcTotals() {
 function applyPromo() {
   const code = (document.getElementById('promo-code') || {}).value || '';
   const sub  = cartTotal();
-  if      (code.toUpperCase() === 'KHELIL10') { discAmt = Math.round(sub * 0.10); toast('10% discount applied! 🎉', 'ok'); }
-  else if (code.toUpperCase() === 'KHELIL20') { discAmt = Math.round(sub * 0.20); toast('20% discount applied! 🎉', 'ok'); }
-  else if (code.toUpperCase() === 'KHELIL5')  { discAmt = Math.round(sub * 0.05); toast('5% discount applied! 🎉',  'ok'); }
-  else { toast('Invalid promo code ❌', 'err'); }
+  const rate = PROMO_CODES[code.toUpperCase().trim()];
+  if (rate) {
+    discAmt = Math.round(sub * rate);
+    toast(`${Math.round(rate * 100)}% discount applied! 🎉`, 'ok');
+  } else {
+    toast('Invalid promo code ❌', 'err');
+  }
   calcTotals();
 }
 
@@ -1283,9 +1347,15 @@ function buildReviewsSection(productId, reviews = []) {
         <button class="rev-submit-btn" onclick="submitReview(${productId})">POST REVIEW →</button>
       </div>
 
-      <!-- Loading indicator -->
-      <div id="rev-loading-${productId}" style="text-align:center;padding:20px;color:var(--text3);font-size:12px;font-family:'JetBrains Mono',monospace;display:none;">
-        ⏳ Loading reviews...
+      <!-- Loading skeleton -->
+      <div id="rev-loading-${productId}" style="display:none;">
+        ${[1,2,3].map(() => `
+        <div class="rev-skeleton">
+          <div class="sk-line sk-name"></div>
+          <div class="sk-line sk-stars"></div>
+          <div class="sk-line sk-text"></div>
+          <div class="sk-line sk-text sk-short"></div>
+        </div>`).join('')}
       </div>
 
       <!-- Reviews List -->
