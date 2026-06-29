@@ -2775,3 +2775,77 @@ body.light-mode .theme-toggle  { border-color: var(--border2); color: var(--text
     width: 48px;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   BREADCRUMB
+═══════════════════════════════════════════════════════════════════════ */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text3);
+}
+
+.bc-item {
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.bc-item:hover { color: var(--cyan); }
+
+.bc-sep { color: var(--border2); }
+
+.bc-current {
+  color: var(--cyan);
+  cursor: default;
+  font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   REVIEW SKELETON
+═══════════════════════════════════════════════════════════════════════ */
+.rev-skeleton {
+  padding: 18px 0;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sk-line {
+  background: linear-gradient(90deg, var(--panel) 25%, var(--panel2) 50%, var(--panel) 75%);
+  background-size: 200% 100%;
+  animation: sk-shimmer 1.4s infinite;
+  border-radius: 4px;
+  height: 12px;
+}
+
+.sk-name   { width: 35%; height: 13px; }
+.sk-stars  { width: 90px; height: 13px; }
+.sk-text   { width: 100%; }
+.sk-short  { width: 65%; }
+
+@keyframes sk-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   RECENTLY VIEWED
+═══════════════════════════════════════════════════════════════════════ */
+#recently-viewed-section {
+  padding-bottom: 40px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   LIGHT MODE OVERRIDES
+═══════════════════════════════════════════════════════════════════════ */
+body.light-mode .sk-line {
+  background: linear-gradient(90deg, #e8ecf0 25%, #f4f6f8 50%, #e8ecf0 75%);
+  background-size: 200% 100%;
+  animation: sk-shimmer 1.4s infinite;
+}
