@@ -1,7 +1,19 @@
 // ============================================================
 // CONFIG — Google Sheets URL hardcoded
 // ============================================================
-const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwpaURjFDjMbv7N4hDfXvrFCuSKtFz3C9-e_3HHdbCVuZ2xddlC3vI6I6QIbfA5yo5g/exec';
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbz7uwgzoIzKyLQp5Lo8mhfXQwgY6F_h8Ez_UFD5LKZM55oNiiLb4Bs3perRh4Gu5rdL/exec';
+
+// ============================================================
+// SECURITY — HTML escaping helper (prevents stored/reflected XSS)
+// Use this on ANY value that came from a user, a review, an order
+// form, or Google Sheets before inserting it via innerHTML.
+// ============================================================
+function escapeHTML(str) {
+  if (str === null || str === undefined) return '';
+  const d = document.createElement('div');
+  d.textContent = String(str);
+  return d.innerHTML;
+}
 
 // ============================================================
 // PROMO CODES CONFIG — عدل هنا فقط بدل ما تدخل في الكود
@@ -61,8 +73,8 @@ const PRODS = [
     id:3, name:'iPhone XR 64GB', brand:'Apple', cat:'Smartphones',
     price:38000, orig:42000,
     icon:'',
-    img:'IPHONEXR64GB82/1.jpeg',
-    video:'IPHONEXR64GB82/v1.mp4',
+    img:'images/IPHONEXR64GB82%/1.jpeg',
+    video:'images/IPHONEXR64GB82%/v1.mp4',
     flag:'CABA', rating:4.9, reviews:312, stock:true,
     desc:`L'iPhone XR 64 Go dispose d'un écran Liquid Retina de 6,1 pouces, d'une puce A12 Bionic et de 64 Go de stockage.Il est équipé d'un appareil photo arrière de 12 MP, d'une caméra avant de 7 MP avec Face ID.Il prend en charge la 4G, la recharge sans fil et est résistant à l'eau (IP67).`,
     specs:{Chip:'Puce Apple A12 Bionic',RAM:'3GB',Storage:'64GB',Display:'6,1 pouces Liquid Retina HD (LCD), résolution 1792 × 828 pixels',Camera:'12 MP (grand-angle) avec stabilisation optique+7 MP TrueDepth avec Face ID',Battery:'16 heures de lecture vidéo, recharge rapide et recharge sans fil Qi 2942 mAh',EtatdeBatterie:'82%'}
@@ -281,21 +293,28 @@ document.addEventListener('DOMContentLoaded', () => {
 // NAVIGATION
 // ============================================================
 function nav(page, cat = '', pushToHistory = true) {
-  // صفحة المنتج — page='product', cat=productId
-  // openProd() يتكفل بعرض الصفحة وحفظ الـ URL مباشرة
-  if (page === 'product' && cat) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+
+  // إعادة عنوان الصفحة الافتراضي عند الخروج من صفحة المنتج
+  if (page !== 'product') {
+    document.title = 'KHELIL TECH — Premium Electronics Store Algeria';
+  }
+
+  // صفحة المنتج — page='product', cat=productId (string)
+  if (page === 'product' && cat && !nav._openingProd) {
     const prodId = parseInt(cat);
     const prod = PRODS.find(x => x.id === prodId);
     if (prod) {
+      nav._openingProd = true;
       openProd(prodId, pushToHistory);
+      nav._openingProd = false;
+      return;
     } else {
       nav('shop', '', pushToHistory);
+      return;
     }
-    return;
   }
 
-  document.title = 'KHELIL TECH — Premium Electronics Store Algeria';
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const pg = document.getElementById('page-' + page);
   if (!pg) return;
   pg.classList.add('active');
@@ -308,14 +327,15 @@ function nav(page, cat = '', pushToHistory = true) {
   }
   if (page === 'checkout') renderCheckout();
   if (page === 'wishlist') renderWishPage();
-  if (page === 'admin')    renderAdm();
 
+  // حفظ الصفحة الحالية في تاريخ المتصفح
   if (pushToHistory) {
     const state = { page, cat };
     const url = '#' + page + (cat ? '/' + encodeURIComponent(cat) : '');
     history.pushState(state, '', url);
   }
 }
+nav._openingProd = false;
 
 // الرجوع للصفحة السابقة بزر Back
 window.addEventListener('popstate', function(event) {
@@ -539,14 +559,7 @@ function openProd(id, pushToHistory = true) {
       <div class="prods-grid">${PRODS.filter(x => x.cat === p.cat && x.id !== p.id).slice(0, 4).map(prodCard).join('')}</div>
     </div>
     <div style="margin-top:48px;" id="recently-viewed-section"></div>`;
-
-  // عرض صفحة المنتج مباشرة — بدون circular call مع nav()
-  document.querySelectorAll('.page').forEach(pg => pg.classList.remove('active'));
-  document.getElementById('page-product').classList.add('active');
-  window.scrollTo({ top: 0, behavior: 'instant' });
-  if (pushToHistory) {
-    history.pushState({ page: 'product', cat: String(p.id) }, '', '#product/' + p.id);
-  }
+  nav('product', String(p.id), pushToHistory);
   // تحميل reviews من Google Sheets بعد فتح الصفحة
   loadReviewsForProduct(p.id);
   // عرض المنتجات المشاهدة مؤخراً (بدون المنتج الحالي)
@@ -900,12 +913,12 @@ async function sendToSheets(order) {
 function renderSuccess(order) {
   document.getElementById('suc-oid').textContent = order.orderId;
   document.getElementById('suc-dets').innerHTML = `
-    <div class="od-item"><div class="od-lbl">Customer</div><div class="od-val">${order.firstName} ${order.lastName}</div></div>
-    <div class="od-item"><div class="od-lbl">Phone</div><div class="od-val">${order.phone}</div></div>
-    <div class="od-item"><div class="od-lbl">Wilaya</div><div class="od-val">${order.wilaya}</div></div>
-    <div class="od-item"><div class="od-lbl">Delivery Type</div><div class="od-val">${order.deliveryType}</div></div>
-    <div class="od-item"><div class="od-lbl">Total</div><div class="od-val" style="color:var(--lime)">${order.total.toLocaleString('fr-DZ')} DA</div></div>
-    <div class="od-item"><div class="od-lbl">Date</div><div class="od-val">${order.date} ${order.time}</div></div>`;
+    <div class="od-item"><div class="od-lbl">Customer</div><div class="od-val">${escapeHTML(order.firstName)} ${escapeHTML(order.lastName)}</div></div>
+    <div class="od-item"><div class="od-lbl">Phone</div><div class="od-val">${escapeHTML(order.phone)}</div></div>
+    <div class="od-item"><div class="od-lbl">Wilaya</div><div class="od-val">${escapeHTML(order.wilaya)}</div></div>
+    <div class="od-item"><div class="od-lbl">Delivery Type</div><div class="od-val">${escapeHTML(order.deliveryType)}</div></div>
+    <div class="od-item"><div class="od-lbl">Total</div><div class="od-val" style="color:var(--lime)">${escapeHTML(order.total.toLocaleString('fr-DZ'))} DA</div></div>
+    <div class="od-item"><div class="od-lbl">Date</div><div class="od-val">${escapeHTML(order.date)} ${escapeHTML(order.time)}</div></div>`;
 }
 
 // ============================================================
@@ -936,162 +949,6 @@ function waProd(id) {
   const wa  = getWaNumber();
   const msg = encodeURIComponent(`Hi! I am interested in:\n*${p.name}*\nPrice: ${p.price.toLocaleString('fr-DZ')} DA\nPlease send more info.`);
   window.open(`https://wa.me/${wa}?text=${msg}`, '_blank');
-}
-
-// ============================================================
-// ADMIN
-// ============================================================
-function showAdm(section, el) {
-  document.querySelectorAll('[id^="adm-"]').forEach(e => e.style.display = 'none');
-  document.getElementById('adm-' + section).style.display = 'block';
-  document.querySelectorAll('.adm-nav-item').forEach(e => e.classList.remove('on'));
-  if (el) el.classList.add('on');
-}
-
-function renderAdm() {
-  renderSalesChart();
-  renderOrdersTable();
-  renderProdsTable();
-  renderRecentMini();
-  renderAnalyticsChart();
-  renderWilayaChart();
-  const allOrders = [...orders, ...mockOrders()];
-  const totalRev  = allOrders.reduce((s, o) => s + (o.total || 0), 0);
-  const rEl = document.getElementById('adm-rev');
-  const oEl = document.getElementById('adm-ord');
-  if (rEl) rEl.textContent = totalRev > 999999 ? (totalRev / 1000000).toFixed(1) + 'M' : totalRev > 999 ? (totalRev / 1000).toFixed(0) + 'K' : totalRev.toString();
-  if (oEl) oEl.textContent = allOrders.length;
-  const waEl = document.getElementById('wa-number');
-  if (waEl && localStorage.getItem('kt-wa')) waEl.value = localStorage.getItem('kt-wa');
-}
-
-function renderSalesChart() {
-  const el = document.getElementById('sales-chart');
-  if (!el) return;
-  const data = [
-    {l:'Gaming PCs', v:42, n:'420K DA'},
-    {l:'Laptops',    v:28, n:'280K DA'},
-    {l:'Phones',     v:18, n:'180K DA'},
-    {l:'Monitors',   v:8,  n:'80K DA'},
-    {l:'Accessories',v:4,  n:'40K DA'},
-  ];
-  el.innerHTML = data.map(d => `
-    <div class="chart-row">
-      <span class="chart-label">${d.l}</span>
-      <div class="chart-track"><div class="chart-fill" style="width:${d.v}%"></div></div>
-      <span class="chart-val">${d.n}</span>
-    </div>`).join('');
-}
-
-function renderAnalyticsChart() {
-  const el = document.getElementById('analytics-chart');
-  if (!el) return;
-  el.innerHTML = PRODS.slice(0, 6).map(p => `
-    <div class="chart-row">
-      <span class="chart-label" style="font-size:10px;">${p.icon} ${p.name.slice(0, 12)}</span>
-      <div class="chart-track"><div class="chart-fill" style="width:${Math.round(p.reviews / 445 * 100)}%"></div></div>
-      <span class="chart-val">${p.reviews}</span>
-    </div>`).join('');
-}
-
-function renderWilayaChart() {
-  const el = document.getElementById('wilaya-chart');
-  if (!el) return;
-  const data = [{l:'Alger',v:85},{l:'Oran',v:62},{l:'Constantine',v:48},{l:'Sétif',v:39},{l:'Annaba',v:31}];
-  el.innerHTML = data.map(d => `
-    <div class="chart-row">
-      <span class="chart-label">${d.l}</span>
-      <div class="chart-track"><div class="chart-fill" style="width:${d.v}%"></div></div>
-      <span class="chart-val">${d.v} orders</span>
-    </div>`).join('');
-}
-
-function renderOrdersTable() {
-  const tbody = document.getElementById('orders-tbody');
-  if (!tbody) return;
-  const all = [...orders, ...mockOrders()].slice(-30).reverse();
-  tbody.innerHTML = all.map(o => `
-    <tr>
-      <td style="color:var(--cyan);font-family:'JetBrains Mono',monospace;font-size:10px;white-space:nowrap">${o.orderId || '—'}</td>
-      <td style="white-space:nowrap">${(o.firstName || '') + ' ' + (o.lastName || o.name || '—')}</td>
-      <td style="font-family:'JetBrains Mono',monospace;font-size:11px">${o.phone || '—'}</td>
-      <td>${o.wilaya || '—'}</td>
-      <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px">${o.products || '—'}</td>
-      <td style="color:var(--lime);font-family:'JetBrains Mono',monospace;white-space:nowrap">${(o.total || 0).toLocaleString('fr-DZ')} DA</td>
-      <td style="font-size:11px">${o.deliveryType || o.delivery || '—'}</td>
-      <td><span class="st-badge st-${(o.status || 'pending').toLowerCase()}">${o.status || 'Pending'}</span></td>
-      <td style="font-size:11px;white-space:nowrap">${o.date || '—'}</td>
-    </tr>`).join('');
-}
-
-function renderRecentMini() {
-  const el  = document.getElementById('recent-mini');
-  if (!el) return;
-  const all = [...orders, ...mockOrders()].slice(-5).reverse();
-  el.innerHTML = all.map(o => `
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:12px;">
-      <div>
-        <div style="color:var(--text)">${(o.firstName || '') + ' ' + (o.lastName || o.name || '—')}</div>
-        <div style="color:var(--text3);font-size:10px;margin-top:2px;">${o.wilaya || '—'} · ${o.date || '—'}</div>
-      </div>
-      <div style="text-align:right">
-        <div style="color:var(--lime);font-family:'JetBrains Mono',monospace;font-size:12px;">${(o.total || 0).toLocaleString('fr-DZ')} DA</div>
-        <span class="st-badge st-${(o.status || 'pending').toLowerCase()}" style="margin-top:3px;display:inline-block">${o.status || 'Pending'}</span>
-      </div>
-    </div>`).join('');
-}
-
-function renderProdsTable() {
-  const tbody = document.getElementById('prods-tbody');
-  if (!tbody) return;
-  tbody.innerHTML = PRODS.map(p => `
-    <tr>
-      <td>
-        <div style="display:flex;align-items:center;gap:8px;">
-          ${p.img
-            ? `<img src="${p.img}" alt="" style="width:32px;height:32px;object-fit:contain;border-radius:4px;" onerror="this.outerHTML='<span>${p.icon}</span>'">`
-            : `<span>${p.icon}</span>`
-          }
-          <span style="font-size:12px">${p.name}</span>
-        </div>
-      </td>
-      <td>${p.cat}</td>
-      <td style="font-family:'JetBrains Mono',monospace;color:var(--lime);font-size:11px">${p.price.toLocaleString('fr-DZ')} DA</td>
-      <td>${p.stock ? '<span style="color:var(--lime)">✅ In Stock</span>' : '<span style="color:var(--red)">❌ Out</span>'}</td>
-      <td style="font-family:'JetBrains Mono',monospace;font-size:11px">${p.reviews}</td>
-      <td><span class="st-badge st-delivered">Active</span></td>
-    </tr>`).join('');
-}
-
-function mockOrders() {
-  return [
-    {orderId:'KT-250527-00001',firstName:'Ahmed',lastName:'Benali',phone:'0555123456',wilaya:'Alger',commune:'Bab Ezzouar',address:'Rue des Freres...',deliveryType:'Home Delivery',products:'RTX 4090 Gaming Beast Pro x1',subtotal:299000,deliveryCost:700,discount:0,total:299700,notes:'—',status:'Delivered',date:'25/05/2025',time:'10:24:00'},
-    {orderId:'KT-250527-00002',firstName:'Sara',lastName:'Madani',phone:'0661234567',wilaya:'Oran',commune:'Es Senia',address:'Cite USTO...',deliveryType:'Desk Pickup',products:'MacBook Pro M3 Max 16" x1',subtotal:265000,deliveryCost:450,discount:0,total:265450,notes:'—',status:'Processing',date:'25/05/2025',time:'14:10:00'},
-    {orderId:'KT-250527-00003',firstName:'Karim',lastName:'Djaziri',phone:'0770987654',wilaya:'Constantine',commune:'El Khroub',address:'Bd du 1er Novembre...',deliveryType:'Home Delivery',products:'iPhone 15 Pro Max 512GB x1',subtotal:178000,deliveryCost:800,discount:0,total:178800,notes:'Urgent',status:'Pending',date:'26/05/2025',time:'09:05:00'},
-    {orderId:'KT-250527-00004',firstName:'Amira',lastName:'Bouazza',phone:'0559876543',wilaya:'Sétif',commune:'Sétif',address:'Rue Hamdani...',deliveryType:'Desk Pickup',products:'Samsung Galaxy S24 Ultra x1 | Sony WH-1000XM5 x1',subtotal:166500,deliveryCost:450,discount:16650,total:150300,notes:'—',status:'Delivered',date:'24/05/2025',time:'16:40:00'},
-    {orderId:'KT-250527-00005',firstName:'Youcef',lastName:'Hamdi',phone:'0662345678',wilaya:'Annaba',commune:'El Bouni',address:'Cite 1000 Logts...',deliveryType:'Home Delivery',products:'RTX 4070 Ti Gaming OC x1',subtotal:68000,deliveryCost:900,discount:0,total:68900,notes:'—',status:'Shipped',date:'26/05/2025',time:'11:20:00'},
-  ];
-}
-
-function exportCSV() {
-  const all     = [...orders, ...mockOrders()];
-  const headers = ['Order ID','Date','Time','First Name','Last Name','Phone','Email','Wilaya','Commune','Address','Delivery Type','Products','Subtotal','Delivery','Discount','Total','Notes','Status'];
-  const rows    = all.map(o => [
-    o.orderId, o.date, o.time,
-    o.firstName || (o.name || '').split(' ')[0],
-    o.lastName  || (o.name || '').split(' ')[1] || '',
-    o.phone, o.email || '', o.wilaya, o.commune || '', o.address || '',
-    o.deliveryType || o.delivery || '', o.products,
-    o.subtotal || 0, o.deliveryCost || 0, o.discount || 0, o.total || 0,
-    o.notes || '', o.status || 'Pending'
-  ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(','));
-  const csv  = [headers.join(','), ...rows].join('\n');
-  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href = url; a.download = `khelil-tech-orders-${new Date().toISOString().slice(0, 10)}.csv`;
-  a.click(); URL.revokeObjectURL(url);
-  toast('CSV exported ✅', 'ok');
 }
 
 // ============================================================
@@ -1365,16 +1222,21 @@ function buildReviewsSection(productId, reviews = []) {
 
 // ---- HTML كارت review واحد ----
 function revCardHTML(r) {
-  const initial = (r.name || '?')[0].toUpperCase();
-  const rating  = Number(r.rating) || 0;
-  const dateStr = r.date || '';
+  const rawInitial = (r.name || '?').trim()[0] || '?';
+  const initial = escapeHTML(rawInitial.toUpperCase());
+  const rating  = Math.max(0, Math.min(5, Number(r.rating) || 0));
+  const dateStr = escapeHTML(r.date || '');
+  const name    = escapeHTML(r.name || 'Anonymous');
+  const title   = escapeHTML(r.title || '');
+  const comment = escapeHTML(r.comment || '');
+  const cardId  = escapeHTML(String(r.id || ''));
   return `
-    <div class="rev-card" id="rev-card-${r.id}">
+    <div class="rev-card" id="rev-card-${cardId}">
       <div class="rev-card-header">
         <div class="rev-card-left">
           <div class="rev-avatar">${initial}</div>
           <div>
-            <div class="rev-card-name">${r.name}</div>
+            <div class="rev-card-name">${name}</div>
             <div class="rev-card-stars">
               <span style="color:#F5C842">${'★'.repeat(rating)}</span><span style="color:var(--border)">${'★'.repeat(5 - rating)}</span>
             </div>
@@ -1382,8 +1244,8 @@ function revCardHTML(r) {
         </div>
         <div class="rev-card-date">${dateStr}</div>
       </div>
-      ${r.title ? `<div style="font-weight:600;font-size:13px;margin-bottom:6px;color:var(--text)">${r.title}</div>` : ''}
-      <div class="rev-card-comment">${r.comment}</div>
+      ${title ? `<div style="font-weight:600;font-size:13px;margin-bottom:6px;color:var(--text)">${title}</div>` : ''}
+      <div class="rev-card-comment">${comment}</div>
     </div>`;
 }
 
