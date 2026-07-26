@@ -1,7 +1,36 @@
 // ============================================================
-// CONFIG — Google Sheets URL hardcoded
+// CONFIG — Supabase project connection
 // ============================================================
-const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxEF2bFjJz0HANkbM7H_IyeRQ87Tcgbp1uEKd_1U81dpb-vJnyHtr_eFRVmX_6qg-KC/exec';
+const SUPABASE_URL      = 'https://fiqomqwgbjvgsjfrwuoj.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpcW9tcXdnYmp2Z3NqZnJ3dW9qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1NTc5NTYsImV4cCI6MjEwMDEzMzk1Nn0.m4YDWY6wB6w4Ty_a0oDxpJrIT-k6C86A1HHm_oEsKvQ'; // Project Settings → API → anon public key
+
+// Defensive: if the Supabase CDN script (jsdelivr) is slow, blocked, or the
+// user is offline, `window.supabase` won't exist yet. Without this guard,
+// the line below throws and silently kills the ENTIRE rest of app.js —
+// no nav, no cart, no product rendering, nothing. Wrapping it means the
+// site still works with the seed catalog even if Supabase is unreachable.
+//
+// IMPORTANT — variable name is `supabaseClient`, NOT `supabase`:
+// The Supabase CDN bundle (<script src="...supabase-js@2">) declares its
+// own top-level `var supabase = ...` to expose the library. A `var` at the
+// top level of a classic script becomes a non-configurable global property.
+// If this file also declared `let supabase = ...`, the browser throws
+// "SyntaxError: Identifier 'supabase' has already been declared" the
+// instant this script is parsed — a PARSE-time error that try/catch cannot
+// catch, which aborts this entire file before a single line runs (nav,
+// cart, product rendering — everything). That was the bug. Keeping our
+// client under a different name (`supabaseClient`, same pattern already
+// used correctly in admin.html) avoids the collision entirely.
+let supabaseClient = null;
+try {
+  if (window.supabase && typeof window.supabase.createClient === 'function') {
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  } else {
+    console.warn('Supabase SDK not loaded (CDN blocked/offline) — running on seed catalog only.');
+  }
+} catch (e) {
+  console.warn('Supabase client failed to initialize — running on seed catalog only.', e);
+}
 
 function getWaNumber() {
   return (localStorage.getItem('kt-wa') || '213558455695').replace(/\D/g,'');
@@ -26,37 +55,43 @@ const CATS = [
 
 // ============================================================
 // PRODUCTS — img: 'images/nom.jpg' اختياري، إذا ماكانش يرجع للـ icon
+// هاذي مصفوفة "seed" تتعرض فوري عند فتح الصفحة، وتتبدل تلقائياً
+// بالمنتجات الحقيقية جايين من Supabase (شوف loadProductsFromSupabase)
+// فور ما الأدمين يزيد/يحذف/يبدل شي حاجة، كل الزوار الجداد يشوفوها.
 // ============================================================
-const PRODS = [
+let PRODS = [
   {
-    id:1, name:'RTX 4090 Gaming Beast Pro', brand:'Custom Build', cat:'Gaming PCs',
-    price:299000, orig:380000,
-    icon:'🖥️',
-    img:'images/rtx4090-beast.jpg',       // ← صورة اختيارية
+    id:'1', name:'HP OMEN', brand:'HP', cat:'Gaming PCs',
+    price:68000, orig:120000,
+    icon:'',
+    imgs:['images/hpomen15-i7-8eme-16-gtx1070/6.jpg', 'images/hpomen15-i7-8eme-16-gtx1070/2.jpg', 'images/hpomen15-i7-8eme-16-gtx1070/3.jpg','images/hpomen15-i7-8eme-16-gtx1070/4.jpg','images/hpomen15-i7-8eme-16-gtx1070/5.jpg','images/hpomen15-i7-8eme-16-gtx1070/1.jpg'],    // ← صور متعددة (يدعم حتى 8)
+    video:'images/hpomen15-i7-8eme-16-gtx1070/V1.mp4', // ← فيديو اختياري: YouTube URL أو رابط mp4 مباشر
     flag:'HOT', rating:4.9, reviews:128, stock:true,
-    desc:'Ultimate gaming powerhouse with Intel Core i9-14900K, 64GB DDR5 RAM, 2TB NVMe SSD, and NVIDIA RTX 4090 24GB. Ready for 4K gaming at maximum settings on every title.',
-    specs:{CPU:'Intel Core i9-14900K',RAM:'64GB DDR5 6000MHz',GPU:'NVIDIA RTX 4090 24GB',Storage:'2TB Samsung 990 Pro NVMe',PSU:'1000W 80+ Gold',Case:'Lian Li PC-O11D'}
+    desc:'The HP OMEN 15.6 is a powerful 2018-era gaming laptop designed to deliver desktop-caliber performance on the go. Featuring a 6-core Intel processor, dedicated NVIDIA graphics, and a high-refresh-rate display with G-Sync, this machine easily handles modern AAA gaming and demanding multitasking. Its sleek design, customizable RGB lighting, and advanced cooling system make it a standout choice for gamers seeking both performance and style.',
+    specs:{CPU:'Intel Core i7-8750H',RAM:'16GB DDR4',GPU:'NVIDIA GTX 1070 8GB',Storage:'512 GB NVMe + 1 TB HDD',Display:'15.6" FHD 144Hz G-Sync',Battery:'70Wh',Ports:'USB-C, HDMI, Mini DisplayPort, Ethernet'}
   },
   {
-    id:2, name:'ASUS ROG Zephyrus G16', brand:'ASUS', cat:'Laptops',
-    price:195000, orig:225000,
+    id:'2', name:'HP EliteBook 850 G3', brand:'HP', cat:'Laptops',
+    price:39000, orig:42000,
     icon:'💻',
-    img:'images/asus-rog-zephyrus.jpg',
-    flag:'NEW', rating:4.8, reviews:64, stock:true,
-    desc:'The ultimate gaming laptop with RTX 4080, Core i9, 240Hz WQHD display, and 90Wh battery for all-day gaming sessions.',
-    specs:{CPU:'Intel Core i9-13980HX',RAM:'32GB DDR5',GPU:'RTX 4080 16GB',Display:'16" QHD+ 240Hz',Storage:'1TB NVMe SSD',Battery:'90Wh'}
+    imgs:['images/HPEliteBook850G3/1.jpg', 'images/HPEliteBook850G3/2.jpg', 'images/HPEliteBook850G3/3.jpg','images/HPEliteBook850G3/4.jpg','images/HPEliteBook850G3/5.jpg'],         
+    video:'images/HPEliteBook850G3/v1.mp4',
+    flag:'CABA', rating:4.8, reviews:64, stock:true,
+    desc:'The computer is an HP EliteBook 850 G3 running Windows 10 Home 64-bit (version 19045) in French. It is powered by an Intel Core i5-6200U processor operating at 2.30 GHz with 2 cores and 4 threads, providing reliable performance for everyday computing and office tasks. The system includes 8 GB of RAM, allowing smooth multitasking and efficient handling of common applications. Graphics are provided by the integrated Intel HD Graphics 520, which supports DirectX 12 and offers 128 MB of dedicated video memory with up to 3.8 GB of shared memory, making it suitable for multimedia, web browsing, and light graphical workloads. The laptop uses BIOS version N75 01.16 and supports the WDDM 2.1 driver model, ensuring compatibility with modern Windows graphics features. Overall, this configuration is a dependable business-class laptop designed for productivity, internet browsing, office applications, programming, video conferencing, and other everyday computing needs.',
+    specs:{CPU:'Intel Core i5-6200U',RAM:'8GB DDR4',GPU:'INTEL UHD Graphics 520',Display:'15.6" FHD',Storage:'128GB NVMe SSD',Battery:'46Wh'}
   },
   {
-    id:3, name:'iPhone 15 Pro Max 512GB', brand:'Apple', cat:'Smartphones',
-    price:178000, orig:198000,
-    icon:'📱',
-    img:'images/iphone15-pro-max.jpg',
-    flag:'SALE', rating:4.9, reviews:312, stock:true,
-    desc:'The most powerful iPhone ever with A17 Pro chip, titanium design, and 48MP camera system with 5x optical zoom.',
-    specs:{Chip:'Apple A17 Pro',RAM:'8GB',Storage:'512GB',Display:'6.7" Super Retina XDR',Camera:'48MP + 12MP + 12MP',Battery:'4422mAh'}
+    id:'3', name:'iPhone XR 64GB', brand:'Apple', cat:'Smartphones',
+    price:38000, orig:42000,
+    icon:'',
+    img:'images/IPHONEXR64GB82%/1.jpeg',
+    video:'images/IPHONEXR64GB82%/v1.mp4',
+    flag:'CABA', rating:4.9, reviews:312, stock:true,
+    desc:`L'iPhone XR 64 Go dispose d'un écran Liquid Retina de 6,1 pouces, d'une puce A12 Bionic et de 64 Go de stockage.Il est équipé d'un appareil photo arrière de 12 MP, d'une caméra avant de 7 MP avec Face ID.Il prend en charge la 4G, la recharge sans fil et est résistant à l'eau (IP67).`,
+    specs:{Chip:'Puce Apple A12 Bionic',RAM:'3GB',Storage:'64GB',Display:'6,1 pouces Liquid Retina HD (LCD), résolution 1792 × 828 pixels',Camera:'12 MP (grand-angle) avec stabilisation optique+7 MP TrueDepth avec Face ID',Battery:'16 heures de lecture vidéo, recharge rapide et recharge sans fil Qi 2942 mAh',EtatdeBatterie:'82%'}
   },
   {
-    id:4, name:'Samsung Galaxy S24 Ultra', brand:'Samsung', cat:'Smartphones',
+    id:'4', name:'Samsung Galaxy S24 Ultra', brand:'Samsung', cat:'Smartphones',
     price:142000, orig:162000,
     icon:'📱',
     img:'images/samsung-s24-ultra.jpg',
@@ -65,25 +100,39 @@ const PRODS = [
     specs:{Chip:'Snapdragon 8 Gen 3',RAM:'12GB',Storage:'256GB',Display:'6.8" Dynamic AMOLED 2X',Camera:'200MP+50MP+10MP+12MP',Battery:'5000mAh'}
   },
   {
-    id:5, name:'MacBook Pro M3 Max 16"', brand:'Apple', cat:'Laptops',
-    price:265000, orig:290000,
+    id:'5', name:'ThinkPad L13 Gen 2"', brand:'Lenovo', cat:'Laptops',
+    price:65000, orig:75000,
     icon:'💻',
-    img:'images/macbook-pro-m3-max.jpg',
-    flag:'HOT', rating:5.0, reviews:97, stock:true,
-    desc:'The most powerful MacBook Pro ever with M3 Max chip. Extraordinary performance for creatives and professionals.',
-    specs:{Chip:'Apple M3 Max',RAM:'48GB Unified',Storage:'1TB SSD',Display:'16.2" Liquid Retina XDR',Battery:'100Wh',Ports:'3x Thunderbolt 4, HDMI, SD'}
+    imgs:['images/lenovothinkpadl13gen2/3.jpg','images/lenovothinkpadl13gen2/2.jpg','images/lenovothinkpadl13gen2/1.jpg'],
+    flag:'CABA', rating:5.0, reviews:97, stock:true,
+    desc:'The most powerful ThinkPad ever with M3 Max chip. Extraordinary performance for creatives and professionals.',
+    specs:{Chip:'INTEL CORE I5-1135G7',GPU:'Intel Iris Xe Graphics',RAM:'8GB DDR 4',Storage:'256GB SSD',Display:'14.3" FHD',Battery:'46Wh',Ports:`2 ports USB 3.2 Gen 1 Type A (toujours alimentés)`}
   },
   {
-    id:6, name:'LG UltraGear 27" 4K 144Hz', brand:'LG', cat:'Monitors',
-    price:52000, orig:64000,
-    icon:'🖵',
-    img:'images/lg-ultragear-27.jpg',
-    flag:'SALE', rating:4.6, reviews:78, stock:true,
-    desc:'IPS 4K gaming monitor with 144Hz refresh rate, G-Sync compatible, and 1ms GtG response time for ultra-smooth gaming.',
-    specs:{Size:'27 inch',Resolution:'3840x2160 (4K)',Panel:'Nano IPS',Refresh:'144Hz',Response:'1ms GtG',Connectors:'2x HDMI 2.1, DisplayPort 1.4'}
+    id:'6',name:'Dell Precision 3540',brand:'Dell',cat:'Laptops',
+    price:65000,orig:75000,
+    icon:'💻',
+    imgs:[
+      'images/dellprecision3540/1.jpg',
+      'images/dellprecision3540/2.jpg',
+      'images/dellprecision3540/3.JPG',
+      'images/dellprecision3540/4.JPG',
+      'images/dellprecision3540/5.JPG',
+    ],
+    flag:'CABA',rating:5.0,reviews:97,stock:true,
+    desc:'Dell Precision 3540 is a professional mobile workstation designed for engineering, design, programming, and business users. Powered by an Intel Core i7-8565U processor with dedicated AMD Radeon Pro WX 2100 graphics, it delivers excellent performance for CAD applications, photo editing, multitasking, and everyday productivity while maintaining solid battery life and premium build quality.',
+    specs:{
+      CPU:'Intel Core i7-8565U',
+      GPU:'AMD Radeon Pro WX 2100 2GB + Intel UHD Graphics 620',
+      RAM:'16GB DDR4',
+      Storage:'256GB NVMe SSD',
+      Display:'15.6" FHD',
+      Battery:'68Wh',
+      Ports:'USB-C, 3x USB 3.1, HDMI, RJ-45, SD Card Reader'
+    }
   },
   {
-    id:7, name:'HyperX Alloy Origins 65', brand:'HyperX', cat:'Keyboards',
+    id:'7', name:'HyperX Alloy Origins 65', brand:'HyperX', cat:'Keyboards',
     price:8900, orig:11000,
     icon:'⌨️',
     img:'images/hyperx-alloy-65.jpg',
@@ -92,7 +141,7 @@ const PRODS = [
     specs:{Layout:'65% Compact',Switches:'HyperX Red Linear',Backlight:'Per-key RGB',Cable:'Detachable USB-C',Build:'Aluminum top frame',Profile:'Low-profile'}
   },
   {
-    id:8, name:'Logitech G Pro X Superlight 2', brand:'Logitech', cat:'Mice',
+    id:'8', name:'Logitech G Pro X Superlight 2', brand:'Logitech', cat:'Mice',
     price:9800, orig:12000,
     icon:'🖱️',
     img:'images/logitech-gpro-superlight2.jpg',
@@ -101,7 +150,7 @@ const PRODS = [
     specs:{Sensor:'HERO 2 25600 DPI',Weight:'< 60g',Buttons:'5',Battery:'95 hours',Connectivity:'LIGHTSPEED Wireless',Shape:'Symmetrical'}
   },
   {
-    id:9, name:'Sony WH-1000XM5', brand:'Sony', cat:'Headsets',
+    id:'9', name:'Sony WH-1000XM5', brand:'Sony', cat:'Headsets',
     price:24500, orig:30000,
     icon:'🎧',
     img:'images/sony-wh1000xm5.jpg',
@@ -110,16 +159,37 @@ const PRODS = [
     specs:{Driver:'30mm',Frequency:'4Hz-40,000Hz',ANC:'Auto Optimizing',Battery:'30 hours',Charging:'USB-C fast charge',Weight:'250g'}
   },
   {
-    id:10, name:'RTX 4070 Ti Gaming OC', brand:'ASUS', cat:'Components',
-    price:68000, orig:78000,
-    icon:'🔧',
-    img:'images/rtx4070ti-asus.jpg',
-    flag:'NEW', rating:4.7, reviews:89, stock:true,
-    desc:'ASUS TUF Gaming RTX 4070 Ti OC Edition with military-grade capacitors for extreme stability during long sessions.',
-    specs:{VRAM:'12GB GDDR6X',Base:'2310 MHz',Boost:'2760 MHz',Power:'285W TDP',Connectors:'3x DP 1.4a, HDMI 2.1',Cooling:'Triple Fan'}
-  },
+    id:'10',
+    name:'Nacon Revolution Unlimited Pro Controller',
+    brand:'Nacon',
+    cat:'Accessories',
+    price:18000,
+    orig:22000,
+    icon:'🎮',
+    imgs:[
+      'images/naconrevolutionunlimited/1.jpg',
+      'images/naconrevolutionunlimited/2.JPG',
+      'images/naconrevolutionunlimited/3.JPG',
+      'images/naconrevolutionunlimited/4.JPG',
+      'images/naconrevolutionunlimited/5.JPG',
+    ],
+    video:'images/naconrevolutionunlimited/v2.mp4',
+    flag:'HOT',
+    rating:4.8,
+    reviews:85,
+    stock:true,
+    desc:'The Nacon Revolution Unlimited Pro Controller is a premium professional gaming controller designed for PlayStation 4 and PC. It features customizable profiles, programmable shortcut buttons, interchangeable thumbsticks, adjustable weights, wired and wireless connectivity, and a premium carrying case for competitive gamers.',
+    specs:{
+      Compatibility:'PS4 / PC',
+      Connectivity:'Bluetooth & USB-C',
+      Battery:'Rechargeable',
+      Profiles:'4 Custom Profiles',
+      Buttons:'Programmable Shortcut Buttons',
+      Features:'Interchangeable Weights, Replaceable Thumbsticks, Hard Carrying Case'
+    }
+},
   {
-    id:11, name:'Razer BlackWidow V4 Pro', brand:'Razer', cat:'Keyboards',
+    id:'11', name:'Razer BlackWidow V4 Pro', brand:'Razer', cat:'Keyboards',
     price:14500, orig:17000,
     icon:'⌨️',
     img:'images/razer-blackwidow-v4.jpg',
@@ -128,40 +198,232 @@ const PRODS = [
     specs:{Layout:'Full Size',Switches:'Razer Yellow Linear',Wireless:'2.4GHz + Bluetooth',Battery:'200 hours',Backlight:'Chroma RGB',Build:'Aluminum alloy'}
   },
   {
-    id:12, name:'Xiaomi 14 Pro 256GB', brand:'Xiaomi', cat:'Smartphones',
-    price:88000, orig:98000,
-    icon:'📱',
-    img:'images/xiaomi-14-pro.jpg',
-    flag:'NEW', rating:4.5, reviews:123, stock:false,
-    desc:'Leica co-engineered cameras with Snapdragon 8 Gen 3 and 120W HyperCharge technology.',
-    specs:{Chip:'Snapdragon 8 Gen 3',RAM:'12GB',Storage:'256GB',Display:'6.73" LTPO AMOLED 120Hz',Camera:'Leica 50MP + 50MP + 50MP',Charging:'120W HyperCharge'}
-  },
-  {
-    id:13, name:'wiiiiw', brand:'Xiaomi', cat:'Smartphones',
-    price:88000, orig:98000,
-    icon:'📱',
-    img:'',                               // ← فارغ = يرجع للـ emoji تلقائياً
-    flag:'HOT', rating:4.5, reviews:123, stock:false,
-    desc:'Leica co-engineered cameras with Snapdragon 8 Gen 3 and 120W HyperCharge technology.',
-    specs:{Chip:'Snapdragon 8 Gen 3',RAM:'12GB',Storage:'256GB',Display:'6.73" LTPO AMOLED 120Hz',Camera:'Leica 50MP + 50MP + 50MP',Charging:'120W HyperCharge'}
-  },
-  {
-    id:14,name:'LENOVO YOGA BOOK 9I',brand:'LENOVO',cat:'Laptops',
+    id:'14',name:'LENOVO YOGA BOOK 9I',brand:'LENOVO',cat:'Laptops',
     price:280000,orig:300000,
     icon:'', // ← رابط صورة خارجي
-    imgs:['images/download.jpg','images/l2.jpg','images/L3.jpg','images/L4.jpg'],
-    flag:'HOT', rating:4.5, reviews:123, stock:true,
+    imgs:['images/yogabook9i/1.jpg','images/yogabook9i/2.jpg','images/yogabook9i/8.jpg','images/yogabook9i/4.jpg' , 'images/yogabook9i/5.jpg','images/yogabook9i/6.jpg','images/yogabook9i/7.jpg','images/yogabook9i/8.jpg' ],
+    video:'images/yogabook9i/v1.mp4',
+    flag:'NEW', rating:4.5, reviews:123, stock:true,
     desc:'The world’s first full dual-screen OLED, multi-mode laptopTwo stunning 13.3″ PureSight OLED displays for versatile usePowered by 13th Gen Intel® Core™ processors and the Intel® Evo™ platformDetachable Bluetooth™ keyboard, stylus pen, & folio stand includedCarbon-neutral construction & eco-friendly packagingLimitless possibilities & incredible entertainment with Dolby Atmos® & Bowers & Wilkins speakers',
-    specs:{CPU:'13th Gen Intel® Core™ i7',RAM:'16GB LPDDR5',GPU:'Intel® Iris® Xe Graphics',Storage:'1TB PCIe SSD',Display:'2x 13.3" PureSight OLED 4K',Battery:'15 hours',Weight:'1.5kg'}
+    specs:{CPU:'Intel® Core™ i7 13th Gen',RAM:'16GB LPDDR5',GPU:'Intel® Iris® Xe Graphics',Storage:'1TB PCIe SSD',Display:'2x 13.3" PureSight OLED 4K',Battery:'15 hours',Weight:'1.5kg'}
   },
 ];
+
+// ============================================================
+// LIVE PRODUCTS — يقرا الكاتالوغ الحقيقي من Supabase ويبدل
+// مصفوفة الـ seed. إذا الطلب فشل (أوفلاين، مشكل نتوورك...) الموقع
+// يكمل خدمة بالـ seed اللي فوق بلا ما يهبط.
+// ============================================================
+async function loadProductsFromSupabase() {
+  try {
+    const { data, error } = await supabaseClient
+      .from('products')
+      .select('*')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    if (!Array.isArray(data) || !data.length) return;
+
+    // نطبّع كل منتج: نتأكد الحقول الأساسية موجودة باش الـ UI ما يهبطش
+    PRODS = data.map(p => ({
+      id: p.id, // uuid string
+      name: p.name || '',
+      brand: p.brand || '',
+      cat: p.category || '',
+      price: Number(p.price) || 0,
+      orig: p.original_price ? Number(p.original_price) : null,
+      icon: p.icon || '',
+      imgs: Array.isArray(p.images) && p.images.length ? p.images : (p.image_url ? [p.image_url] : []),
+      img: Array.isArray(p.images) && p.images.length ? p.images[0] : (p.image_url || ''),
+      video: p.video_url || '',
+      flag: p.badge || '',
+      rating: Number(p.rating) || 0,
+      reviews: Number(p.review_count) || 0,
+      stock: p.in_stock !== false,
+      desc: p.description || '',
+      specs: p.specs && typeof p.specs === 'object' ? p.specs : {},
+    }));
+
+    // نعيد رسم كل جزء فالصفحة يعتمد على PRODS
+    renderCats();
+    renderFlash();
+    renderTrending();
+    const shopPage = document.getElementById('page-shop');
+    if (shopPage && shopPage.classList.contains('active')) filterProds();
+  } catch (err) {
+    // Offline or network failure — keep serving the seed catalog silently.
+  }
+}
+
+// ============================================================
+// FLASH DEAL — الكارد الكبير فأعلى الصفحة الرئيسية، متحكم فيه
+// من admin.html (جدول settings، المفتاح 'flash_deal'، القيمة فيها
+// مصفوفة deals[]). إذا زاد الأدمين أكثر من ديل، الكارد يتبدل
+// أوتوماتيك بينهم. إذا ماكانش إعداد نشيط أو صرا خطأ فالنتوورك،
+// الكارد يبقى بالقيم الافتراضية المكتوبة هاردكود فـ KhelilTech.html.
+// ============================================================
+let flashDeals       = [];   // مصفوفة الديلز المفعّلين، كل وحدة فيها { badge_text, stock_left, percent_sold, product }
+let flashDealIdx     = 0;
+let flashDealTimer   = null;
+let flashDealActive  = false; // true = الكارد راه تحت تحكم الديلز، رواقف دوران الأيقونة الافتراضي
+
+async function loadFlashDeal() {
+  if (!supabaseClient) return;
+  try {
+    const { data, error } = await supabaseClient
+      .from('settings')
+      .select('value')
+      .eq('key', 'flash_deal')
+      .maybeSingle();
+    if (error) throw error;
+    if (!data || !data.value || data.value.active === false) return;
+
+    const cfg = data.value;
+    const rawDeals = Array.isArray(cfg.deals) ? cfg.deals : [];
+    const ids = rawDeals.map(d => d.product_id).filter(Boolean);
+    if (!ids.length) return;
+
+    const { data: rows, error: prodErr } = await supabaseClient
+      .from('products')
+      .select('*')
+      .in('id', ids);
+    if (prodErr) throw prodErr;
+
+    const byId = {};
+    (rows || []).forEach(r => { byId[r.id] = r; });
+
+    flashDeals = rawDeals
+      .filter(d => d.product_id && byId[d.product_id])
+      .map(d => {
+        const row = byId[d.product_id];
+        return {
+          badge_text: d.badge_text || '',
+          stock_left: typeof d.stock_left === 'number' ? d.stock_left : null,
+          percent_sold: typeof d.percent_sold === 'number' ? d.percent_sold : null,
+          product: {
+            id: row.id,
+            name: row.name || '',
+            price: Number(row.price) || 0,
+            orig: row.original_price ? Number(row.original_price) : null,
+            icon: row.icon || '',
+            img: (Array.isArray(row.images) && row.images[0]) || row.image_url || '',
+          },
+        };
+      });
+
+    if (!flashDeals.length) return;
+
+    flashDealActive = true;
+    flashDealIdx = 0;
+    renderFlashHero(flashDeals[0]);
+
+    if (flashDealTimer) clearInterval(flashDealTimer);
+    if (flashDeals.length > 1) {
+      const ms = Math.max(2, Number(cfg.interval_seconds) || 5) * 1000;
+      flashDealTimer = setInterval(rotateFlashDeal, ms);
+    }
+  } catch (err) {
+    // settings/products query فشلت أو الجدول ماكانش موجود — الكارد الافتراضي يبقى ظاهر
+  }
+}
+
+function rotateFlashDeal() {
+  if (flashDeals.length < 2) return;
+  flashDealIdx = (flashDealIdx + 1) % flashDeals.length;
+  const rotator = document.getElementById('hc-rotator');
+  if (!rotator) { renderFlashHero(flashDeals[flashDealIdx]); return; }
+  rotator.style.opacity = '0';
+  setTimeout(() => {
+    renderFlashHero(flashDeals[flashDealIdx]);
+    rotator.style.opacity = '1';
+  }, 350);
+}
+
+function renderFlashHero(entry) {
+  const badgeEl = document.getElementById('hc-badge');
+  if (!badgeEl) return; // مانيش فالصفحة الرئيسية
+
+  const { product: p, badge_text, stock_left, percent_sold } = entry;
+  const nameEl  = document.getElementById('hc-name');
+  const priceEl = document.getElementById('hc-price');
+  const oldEl   = document.getElementById('hc-old');
+  const barEl   = document.getElementById('hc-bar-fill');
+  const leftEl  = document.getElementById('hc-stock-left');
+  const soldEl  = document.getElementById('hc-percent-sold');
+  const icoEl   = document.getElementById('hero-ico');
+
+  const disc = p.orig ? Math.round((1 - p.price / p.orig) * 100) : null;
+  badgeEl.textContent = badge_text || (disc ? `⚡ FLASH DEAL — ${disc}% OFF` : '⚡ FLASH DEAL');
+  if (nameEl)  nameEl.textContent = p.name;
+  if (priceEl) priceEl.textContent = `${p.price.toLocaleString('fr-DZ')} DA`;
+  if (oldEl) {
+    oldEl.style.display = p.orig ? '' : 'none';
+    if (p.orig) oldEl.textContent = `${p.orig.toLocaleString('fr-DZ')} DA`;
+  }
+  flashDealProdId = p.id;
+
+  // نبدلو/نحدّثو الأيقونة بصورة المنتج الحقيقية، أو نرجعو للـ emoji إذا ماكانش عندو صورة
+  if (icoEl) {
+    if (p.img) {
+      if (icoEl.tagName === 'IMG') { icoEl.src = p.img; icoEl.alt = p.name; icoEl.style.display = ''; }
+      else icoEl.outerHTML = `<img id="hero-ico" src="${p.img}" alt="${esc(p.name)}" style="width:120px;height:120px;object-fit:contain;display:block;margin:0 auto 16px;" onerror="this.style.display='none';"/>`;
+    } else if (icoEl.tagName === 'IMG') {
+      icoEl.outerHTML = `<span class="hc-img" id="hero-ico">${p.icon || '🖥️'}</span>`;
+    } else {
+      icoEl.textContent = p.icon || icoEl.textContent;
+    }
+  }
+
+  if (leftEl) leftEl.textContent = stock_left != null ? `🔥 Only ${stock_left} left!` : '';
+  if (typeof percent_sold === 'number') {
+    const pct = Math.max(0, Math.min(100, percent_sold));
+    if (soldEl) soldEl.textContent = `${pct}% sold`;
+    if (barEl)  barEl.style.width = `${pct}%`;
+  } else if (soldEl) {
+    soldEl.textContent = '';
+  }
+}
+
+function viewFlashDeal() {
+  if (flashDealProdId && PRODS.some(x => x.id === flashDealProdId)) openProd(flashDealProdId);
+  else nav('shop');
+}
+
+// ============================================================
+// HELPER — يحول YouTube URL لـ embed
+// ============================================================
+function getYouTubeId(url) {
+  if (!url) return null;
+  const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+
+function buildVideoEmbed(url) {
+  if (!url) return '';
+  const ytId = getYouTubeId(url);
+  if (ytId) {
+    return `<iframe
+      src="https://www.youtube.com/embed/${ytId}"
+      title="Product Video"
+      frameborder="0"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allowfullscreen
+      style="width:100%;height:100%;border-radius:var(--r2);"
+    ></iframe>`;
+  }
+  // رابط mp4 مباشر
+  return `<video controls style="width:100%;height:100%;border-radius:var(--r2);object-fit:contain;background:#000;">
+    <source src="${url}">
+  </video>`;
+}
 
 // ============================================================
 // HELPER — يعرض الصورة أو الـ emoji كـ fallback
 // ============================================================
 function prodMedia(p, size = 'card') {
   // Support both p.img (string) and p.imgs (array) — use first image available
-  const imgSrc = p.img || (Array.isArray(p.imgs) && p.imgs.length ? p.imgs[0] : '');
+  const imgSrc = (Array.isArray(p.imgs) && p.imgs.length ? p.imgs[0] : '') || p.img || '';
   if (imgSrc) {
     const styles = size === 'card'
       ? 'width:100%;height:100%;object-fit:contain;position:relative;z-index:1;'
@@ -187,6 +449,7 @@ let dlvCost  = 700;
 let discAmt  = 0;
 let activeCat = 'All';
 let curProd   = null;
+let flashDealProdId  = null;  // منتج الديل المعروض دابا فالكارد (باش زر VIEW يودي ليه)
 
 // ============================================================
 // INIT
@@ -201,9 +464,9 @@ document.addEventListener('DOMContentLoaded', () => {
   startCd();
   initNavScroll();
   initShop();
+  loadProductsFromSupabase(); // يبدل الـ seed بالكاتالوغ الحقيقي فالخلفية
+  loadFlashDeal();            // يقرا إعدادات الـ Flash Deal من الأدمين
   setInterval(rotHeroIco, 3000);
-  const waEl = document.getElementById('wa-number');
-  if (waEl && localStorage.getItem('kt-wa')) waEl.value = localStorage.getItem('kt-wa');
 
   // تحميل الصفحة الصحيحة من الـ URL عند الفتح
   const hash = window.location.hash.replace('#', '');
@@ -235,7 +498,6 @@ function nav(page, cat = '', pushToHistory = true) {
   }
   if (page === 'checkout') renderCheckout();
   if (page === 'wishlist') renderWishPage();
-  if (page === 'admin')    renderAdm();
 
   // حفظ الصفحة الحالية في تاريخ المتصفح
   if (pushToHistory) {
@@ -261,12 +523,15 @@ window.addEventListener('popstate', function(event) {
 function renderCats() {
   const g = document.getElementById('cats-grid');
   if (!g) return;
-  g.innerHTML = CATS.map(c => `
+  g.innerHTML = CATS.map(c => {
+    const realCount = PRODS.filter(p => p.cat === c.name).length;
+    return `
     <div class="cat-card" onclick="nav('shop','${c.name}')">
       <span class="cat-icon">${c.icon}</span>
       <div class="cat-name">${c.name}</div>
-      <div class="cat-count">${c.count}</div>
-    </div>`).join('');
+      <div class="cat-count">${realCount}</div>
+    </div>`;
+  }).join('');
 }
 
 // ============================================================
@@ -276,10 +541,10 @@ function prodCard(p) {
   const inW = wishlist.includes(p.id);
   const fc  = p.flag === 'SALE' ? 'f-sale' : p.flag === 'NEW' ? 'f-new' : 'f-hot';
   return `
-    <div class="prod-card" onclick="openProd(${p.id})">
+    <div class="prod-card" onclick="openProd('${p.id}')">
       <div class="prod-img">
         ${p.flag ? `<div class="prod-flag ${fc}">${p.flag}</div>` : ''}
-        <div class="prod-wish ${inW ? 'on' : ''}" onclick="event.stopPropagation();toggleWish(${p.id})">♥</div>
+        <div class="prod-wish ${inW ? 'on' : ''}" onclick="event.stopPropagation();toggleWish('${p.id}')">♥</div>
         ${prodMedia(p, 'card')}
       </div>
       <div class="prod-body">
@@ -294,7 +559,7 @@ function prodCard(p) {
             <div class="prod-price">${p.price.toLocaleString('fr-DZ')} DA</div>
             ${p.orig ? `<div class="prod-orig">${p.orig.toLocaleString('fr-DZ')} DA</div>` : ''}
           </div>
-          <button class="prod-add" onclick="event.stopPropagation();addCart(${p.id})">+ CART</button>
+          <button class="prod-add" onclick="event.stopPropagation();addCart('${p.id}')">+ CART</button>
         </div>
       </div>
     </div>`;
@@ -358,7 +623,7 @@ function goSearch() {
 }
 
 // ============================================================
-// PRODUCT DETAIL — gallery بالصورة الحقيقية
+// PRODUCT DETAIL — gallery بالصورة الحقيقية + فيديو
 // ============================================================
 function openProd(id) {
   const p = PRODS.find(x => x.id === id);
@@ -366,9 +631,9 @@ function openProd(id) {
   curProd = p;
   const disc = p.orig ? Math.round((1 - p.price / p.orig) * 100) : 0;
 
-  // بناء الـ gallery: support both p.img (string) and p.imgs (array)
+  // بناء الـ gallery: support both p.img (string) and p.imgs (array) — حتى 8 صور
   const galleryImgs = Array.isArray(p.imgs) && p.imgs.length
-    ? p.imgs
+    ? p.imgs.slice(0, 8)
     : p.img ? [p.img] : [];
 
   const firstImg = galleryImgs[0] || '';
@@ -383,16 +648,21 @@ function openProd(id) {
       /><span id="det-main-icon" style="display:none;font-size:120px;">${p.icon}</span>`
     : `<span style="font-size:120px;">${p.icon}</span>`;
 
-  // Build thumbs from actual gallery images, pad to 4 if needed
-  const thumbImgs = [...galleryImgs];
-  while (thumbImgs.length < 4) thumbImgs.push(firstImg || '');
-  const thumbs = thumbImgs.slice(0, 4).map((src, i) => `
+  // Thumbs — حتى 8 صور مع scroll أفقي
+  const thumbs = galleryImgs.map((src, i) => `
     <div class="det-thumb ${i === 0 ? 'on' : ''}" onclick="switchDetImg('${src}',this)">
       ${src
-        ? `<img src="${src}" alt="" style="width:100%;height:100%;object-fit:contain;" onerror="this.outerHTML='<span>${p.icon}</span>'">`
-        : p.icon
+        ? `<img src="${src}" alt="" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none'">`
+        : `<span style="font-size:22px">${p.icon}</span>`
       }
     </div>`).join('');
+
+  // قسم الفيديو — يظهر فقط إذا كان p.video موجود
+  const videoSection = p.video ? `
+    <div class="det-video-section">
+      <div class="det-video-label">🎬 PRODUCT VIDEO</div>
+      <div class="det-video-wrap">${buildVideoEmbed(p.video)}</div>
+    </div>` : '';
 
   document.getElementById('det-content').innerHTML = `
     <div class="back-link" onclick="nav('shop')">← Back</div>
@@ -400,13 +670,13 @@ function openProd(id) {
       <div class="det-gallery">
         <div class="det-main-img">${mainMedia}</div>
         <div class="det-thumbs">${thumbs}</div>
+        ${videoSection}
       </div>
       <div>
         <div class="det-brand">${p.brand}</div>
         <h1 class="det-h1">${p.name}</h1>
-        <div class="det-rating">
-          <span style="color:#F5C842;font-size:16px">${'★'.repeat(Math.floor(p.rating))}</span>
-          <span style="color:var(--text2);font-size:13px;margin-left:6px;">${p.rating} · ${p.reviews} reviews</span>
+        <div class="det-rating" id="det-live-rating">
+          ${buildLiveRatingHTML(p.id, [])}
         </div>
         <div class="${p.stock ? 'stk-badge in-stk' : 'stk-badge out-stk'}">${p.stock ? '✅ In Stock' : '❌ Out of Stock'}</div>
         <div class="det-price-row">
@@ -427,19 +697,24 @@ function openProd(id) {
         </div>
         <div class="det-btns">
           <button class="btn-prime" onclick="addFromDet()" ${!p.stock ? 'disabled style="opacity:0.5;cursor:not-allowed"' : ''}>🛒 ADD TO CART</button>
-          <button class="btn-wa" onclick="waProd(${p.id})">📱 WhatsApp</button>
+          <button class="btn-wa" onclick="waProd('${p.id}')">📱 WhatsApp</button>
         </div>
         <div style="display:flex;gap:10px;">
-          <button class="btn-ghost" style="flex:1;padding:12px;" onclick="toggleWish(${p.id})">♥ WISHLIST</button>
-          <button class="btn-prime" style="flex:1;padding:12px;" onclick="buyNow(${p.id})" ${!p.stock ? 'disabled style="opacity:0.5;cursor:not-allowed"' : ''}>⚡ BUY NOW</button>
+          <button class="btn-ghost" style="flex:1;padding:12px;" onclick="toggleWish('${p.id}')">♥ WISHLIST</button>
+          <button class="btn-prime" style="flex:1;padding:12px;" onclick="buyNow('${p.id}')" ${!p.stock ? 'disabled style="opacity:0.5;cursor:not-allowed"' : ''}>⚡ BUY NOW</button>
         </div>
       </div>
+    </div>
+    <div style="margin-top:60px;" id="reviews-anchor">
+      ${buildReviewsSection(p.id)}
     </div>
     <div style="margin-top:60px;">
       <h2 style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:22px;">RELATED PRODUCTS</h2>
       <div class="prods-grid">${PRODS.filter(x => x.cat === p.cat && x.id !== p.id).slice(0, 4).map(prodCard).join('')}</div>
     </div>`;
   nav('product');
+  // تحميل reviews من Supabase بعد فتح الصفحة
+  loadReviewsForProduct(p.id);
 }
 
 function switchDetImg(src, thumbEl) {
@@ -531,10 +806,10 @@ function renderCartPanel() {
         <div class="ci-name">${p.name}</div>
         <div class="ci-price">${(p.price * item.qty).toLocaleString('fr-DZ')} DA</div>
         <div class="ci-row">
-          <button class="ci-qb" onclick="chgCartQty(${p.id},-1)">−</button>
+          <button class="ci-qb" onclick="chgCartQty('${p.id}',-1)">−</button>
           <span class="ci-q">${item.qty}</span>
-          <button class="ci-qb" onclick="chgCartQty(${p.id},1)">+</button>
-          <button class="ci-del" onclick="rmCart(${p.id})">🗑</button>
+          <button class="ci-qb" onclick="chgCartQty('${p.id}',1)">+</button>
+          <button class="ci-del" onclick="rmCart('${p.id}')">🗑</button>
         </div>
       </div>
     </div>`;
@@ -664,11 +939,6 @@ function validate() {
 async function placeOrder() {
   if (!validate()) return;
 
-  const now     = new Date();
-  const lastNum = parseInt(localStorage.getItem('kt-last-order-num') || '0') + 1;
-  localStorage.setItem('kt-last-order-num', String(lastNum));
-  const orderId = 'KT-' + String(lastNum).padStart(5, '0');
-
   const fname   = document.getElementById('f-fname').value.trim();
   const lname   = document.getElementById('f-lname').value.trim();
   const phone   = document.getElementById('f-phone').value.trim();
@@ -680,16 +950,55 @@ async function placeOrder() {
   const sub     = cartTotal();
   const total   = sub + dlvCost - discAmt;
 
-  const productsList = cart.map(item => {
+  const cartItems = cart.map(item => {
     const p = PRODS.find(x => x.id === item.id);
-    return p ? `${p.name} x${item.qty}` : '';
-  }).filter(Boolean).join(' | ');
+    return p ? { product_id: p.id, name: p.name, qty: item.qty, price: p.price } : null;
+  }).filter(Boolean);
 
-  const totalQty = cart.reduce((s, item) => s + item.qty, 0);
+  const productsList = cartItems.map(it => `${it.name} x${it.qty}`).join(' | ');
+  const totalQty     = cart.reduce((s, item) => s + item.qty, 0);
+  const deliveryType = selDlv === 'home' ? 'Livraison à domicile' : 'Retrait bureau';
 
+  document.getElementById('loading-overlay').classList.remove('hidden');
+
+  let data, error;
+  try {
+    if (!supabaseClient) throw new Error('Supabase unavailable');
+    ({ data, error } = await supabaseClient
+      .from('orders')
+      .insert({
+        first_name:    fname,
+        last_name:     lname,
+        phone,
+        email:         email || null,
+        wilaya,
+        commune:       commune || null,
+        address:       address || null,
+        delivery_type: deliveryType,
+        items:         cartItems,
+        total_qty:     totalQty,
+        subtotal:      sub,
+        delivery_cost: dlvCost,
+        discount:      discAmt,
+        total,
+        notes:         notes || null,
+      })
+      .select()
+      .single());
+  } catch (e) {
+    error = e;
+  }
+
+  document.getElementById('loading-overlay').classList.add('hidden');
+
+  if (error) {
+    toast('Could not place order. Please try again or contact us on WhatsApp.', 'err');
+    return;
+  }
+
+  const now = new Date(data.created_at);
   const orderData = {
-    // — keys internes (CSV export, localStorage, etc.)
-    orderId,
+    orderId:      data.order_number,
     date:         now.toLocaleDateString('fr-DZ'),
     time:         now.toLocaleTimeString('fr-DZ'),
     firstName:    fname,
@@ -699,32 +1008,18 @@ async function placeOrder() {
     wilaya,
     commune,
     address,
-    deliveryType: selDlv === 'home' ? 'Livraison à domicile' : 'Retrait bureau',
+    deliveryType,
     products:     productsList,
     subtotal:     sub,
     deliveryCost: dlvCost,
     discount:     discAmt,
     total,
     notes:        notes || '—',
-    status:       'En attente',
-    timestamp:    now.toISOString(),
-
-    // — keys exactes attendues par le Apps Script
-    orderNum:   orderId,
-    prenom:     fname,
-    nom:        lname,
-    adresse:    address || '—',
-    delivery:   selDlv === 'home' ? 'Livraison à domicile' : 'Retrait bureau',
-    itemsText:  productsList,
-    totalQty:   totalQty,
+    status:       data.status,
   };
 
   orders.push(orderData);
   localStorage.setItem('kt-orders', JSON.stringify(orders));
-
-  document.getElementById('loading-overlay').classList.remove('hidden');
-  const result = await sendToSheets(orderData);
-  document.getElementById('loading-overlay').classList.add('hidden');
 
   cart    = [];
   discAmt = 0;
@@ -732,28 +1027,7 @@ async function placeOrder() {
   updateUI();
   renderSuccess(orderData);
   nav('success');
-
-  if (result.success) toast('✅ Order synced to Google Sheets!', 'ok');
-  else                toast('Order saved locally. Check your Sheets connection.', 'info');
-}
-
-// ============================================================
-// SEND TO GOOGLE SHEETS
-// ============================================================
-async function sendToSheets(order) {
-  try {
-    // text/plain = simple request = pas de preflight CORS = Apps Script reçoit toujours
-    await fetch(SHEETS_URL, {
-      method:  'POST',
-      mode:    'no-cors',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body:    JSON.stringify(order),
-    });
-    return { success: true };
-  } catch (err) {
-    console.error('Google Sheets sync error:', err);
-    return { success: false, reason: err.message };
-  }
+  toast('✅ Order placed successfully!', 'ok');
 }
 
 function renderSuccess(order) {
@@ -798,187 +1072,6 @@ function waProd(id) {
 }
 
 // ============================================================
-// ADMIN
-// ============================================================
-function showAdm(section, el) {
-  document.querySelectorAll('[id^="adm-"]').forEach(e => e.style.display = 'none');
-  document.getElementById('adm-' + section).style.display = 'block';
-  document.querySelectorAll('.adm-nav-item').forEach(e => e.classList.remove('on'));
-  if (el) el.classList.add('on');
-}
-
-function renderAdm() {
-  renderSalesChart();
-  renderOrdersTable();
-  renderProdsTable();
-  renderRecentMini();
-  renderAnalyticsChart();
-  renderWilayaChart();
-  const allOrders = [...orders, ...mockOrders()];
-  const totalRev  = allOrders.reduce((s, o) => s + (o.total || 0), 0);
-  const rEl = document.getElementById('adm-rev');
-  const oEl = document.getElementById('adm-ord');
-  if (rEl) rEl.textContent = totalRev > 999999 ? (totalRev / 1000000).toFixed(1) + 'M' : totalRev > 999 ? (totalRev / 1000).toFixed(0) + 'K' : totalRev.toString();
-  if (oEl) oEl.textContent = allOrders.length;
-  const waEl = document.getElementById('wa-number');
-  if (waEl && localStorage.getItem('kt-wa')) waEl.value = localStorage.getItem('kt-wa');
-}
-
-function renderSalesChart() {
-  const el = document.getElementById('sales-chart');
-  if (!el) return;
-  const data = [
-    {l:'Gaming PCs', v:42, n:'420K DA'},
-    {l:'Laptops',    v:28, n:'280K DA'},
-    {l:'Phones',     v:18, n:'180K DA'},
-    {l:'Monitors',   v:8,  n:'80K DA'},
-    {l:'Accessories',v:4,  n:'40K DA'},
-  ];
-  el.innerHTML = data.map(d => `
-    <div class="chart-row">
-      <span class="chart-label">${d.l}</span>
-      <div class="chart-track"><div class="chart-fill" style="width:${d.v}%"></div></div>
-      <span class="chart-val">${d.n}</span>
-    </div>`).join('');
-}
-
-function renderAnalyticsChart() {
-  const el = document.getElementById('analytics-chart');
-  if (!el) return;
-  el.innerHTML = PRODS.slice(0, 6).map(p => `
-    <div class="chart-row">
-      <span class="chart-label" style="font-size:10px;">${p.icon} ${p.name.slice(0, 12)}</span>
-      <div class="chart-track"><div class="chart-fill" style="width:${Math.round(p.reviews / 445 * 100)}%"></div></div>
-      <span class="chart-val">${p.reviews}</span>
-    </div>`).join('');
-}
-
-function renderWilayaChart() {
-  const el = document.getElementById('wilaya-chart');
-  if (!el) return;
-  const data = [{l:'Alger',v:85},{l:'Oran',v:62},{l:'Constantine',v:48},{l:'Sétif',v:39},{l:'Annaba',v:31}];
-  el.innerHTML = data.map(d => `
-    <div class="chart-row">
-      <span class="chart-label">${d.l}</span>
-      <div class="chart-track"><div class="chart-fill" style="width:${d.v}%"></div></div>
-      <span class="chart-val">${d.v} orders</span>
-    </div>`).join('');
-}
-
-function renderOrdersTable() {
-  const tbody = document.getElementById('orders-tbody');
-  if (!tbody) return;
-  const all = [...orders, ...mockOrders()].slice(-30).reverse();
-  tbody.innerHTML = all.map(o => `
-    <tr>
-      <td style="color:var(--cyan);font-family:'JetBrains Mono',monospace;font-size:10px;white-space:nowrap">${o.orderId || '—'}</td>
-      <td style="white-space:nowrap">${(o.firstName || '') + ' ' + (o.lastName || o.name || '—')}</td>
-      <td style="font-family:'JetBrains Mono',monospace;font-size:11px">${o.phone || '—'}</td>
-      <td>${o.wilaya || '—'}</td>
-      <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px">${o.products || '—'}</td>
-      <td style="color:var(--lime);font-family:'JetBrains Mono',monospace;white-space:nowrap">${(o.total || 0).toLocaleString('fr-DZ')} DA</td>
-      <td style="font-size:11px">${o.deliveryType || o.delivery || '—'}</td>
-      <td><span class="st-badge st-${(o.status || 'pending').toLowerCase()}">${o.status || 'Pending'}</span></td>
-      <td style="font-size:11px;white-space:nowrap">${o.date || '—'}</td>
-    </tr>`).join('');
-}
-
-function renderRecentMini() {
-  const el  = document.getElementById('recent-mini');
-  if (!el) return;
-  const all = [...orders, ...mockOrders()].slice(-5).reverse();
-  el.innerHTML = all.map(o => `
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:12px;">
-      <div>
-        <div style="color:var(--text)">${(o.firstName || '') + ' ' + (o.lastName || o.name || '—')}</div>
-        <div style="color:var(--text3);font-size:10px;margin-top:2px;">${o.wilaya || '—'} · ${o.date || '—'}</div>
-      </div>
-      <div style="text-align:right">
-        <div style="color:var(--lime);font-family:'JetBrains Mono',monospace;font-size:12px;">${(o.total || 0).toLocaleString('fr-DZ')} DA</div>
-        <span class="st-badge st-${(o.status || 'pending').toLowerCase()}" style="margin-top:3px;display:inline-block">${o.status || 'Pending'}</span>
-      </div>
-    </div>`).join('');
-}
-
-function renderProdsTable() {
-  const tbody = document.getElementById('prods-tbody');
-  if (!tbody) return;
-  tbody.innerHTML = PRODS.map(p => `
-    <tr>
-      <td>
-        <div style="display:flex;align-items:center;gap:8px;">
-          ${p.img
-            ? `<img src="${p.img}" alt="" style="width:32px;height:32px;object-fit:contain;border-radius:4px;" onerror="this.outerHTML='<span>${p.icon}</span>'">`
-            : `<span>${p.icon}</span>`
-          }
-          <span style="font-size:12px">${p.name}</span>
-        </div>
-      </td>
-      <td>${p.cat}</td>
-      <td style="font-family:'JetBrains Mono',monospace;color:var(--lime);font-size:11px">${p.price.toLocaleString('fr-DZ')} DA</td>
-      <td>${p.stock ? '<span style="color:var(--lime)">✅ In Stock</span>' : '<span style="color:var(--red)">❌ Out</span>'}</td>
-      <td style="font-family:'JetBrains Mono',monospace;font-size:11px">${p.reviews}</td>
-      <td><span class="st-badge st-delivered">Active</span></td>
-    </tr>`).join('');
-}
-
-function mockOrders() {
-  return [
-    {orderId:'KT-250527-00001',firstName:'Ahmed',lastName:'Benali',phone:'0555123456',wilaya:'Alger',commune:'Bab Ezzouar',address:'Rue des Freres...',deliveryType:'Home Delivery',products:'RTX 4090 Gaming Beast Pro x1',subtotal:299000,deliveryCost:700,discount:0,total:299700,notes:'—',status:'Delivered',date:'25/05/2025',time:'10:24:00'},
-    {orderId:'KT-250527-00002',firstName:'Sara',lastName:'Madani',phone:'0661234567',wilaya:'Oran',commune:'Es Senia',address:'Cite USTO...',deliveryType:'Desk Pickup',products:'MacBook Pro M3 Max 16" x1',subtotal:265000,deliveryCost:450,discount:0,total:265450,notes:'—',status:'Processing',date:'25/05/2025',time:'14:10:00'},
-    {orderId:'KT-250527-00003',firstName:'Karim',lastName:'Djaziri',phone:'0770987654',wilaya:'Constantine',commune:'El Khroub',address:'Bd du 1er Novembre...',deliveryType:'Home Delivery',products:'iPhone 15 Pro Max 512GB x1',subtotal:178000,deliveryCost:800,discount:0,total:178800,notes:'Urgent',status:'Pending',date:'26/05/2025',time:'09:05:00'},
-    {orderId:'KT-250527-00004',firstName:'Amira',lastName:'Bouazza',phone:'0559876543',wilaya:'Sétif',commune:'Sétif',address:'Rue Hamdani...',deliveryType:'Desk Pickup',products:'Samsung Galaxy S24 Ultra x1 | Sony WH-1000XM5 x1',subtotal:166500,deliveryCost:450,discount:16650,total:150300,notes:'—',status:'Delivered',date:'24/05/2025',time:'16:40:00'},
-    {orderId:'KT-250527-00005',firstName:'Youcef',lastName:'Hamdi',phone:'0662345678',wilaya:'Annaba',commune:'El Bouni',address:'Cite 1000 Logts...',deliveryType:'Home Delivery',products:'RTX 4070 Ti Gaming OC x1',subtotal:68000,deliveryCost:900,discount:0,total:68900,notes:'—',status:'Shipped',date:'26/05/2025',time:'11:20:00'},
-  ];
-}
-
-function exportCSV() {
-  const all     = [...orders, ...mockOrders()];
-  const headers = ['Order ID','Date','Time','First Name','Last Name','Phone','Email','Wilaya','Commune','Address','Delivery Type','Products','Subtotal','Delivery','Discount','Total','Notes','Status'];
-  const rows    = all.map(o => [
-    o.orderId, o.date, o.time,
-    o.firstName || (o.name || '').split(' ')[0],
-    o.lastName  || (o.name || '').split(' ')[1] || '',
-    o.phone, o.email || '', o.wilaya, o.commune || '', o.address || '',
-    o.deliveryType || o.delivery || '', o.products,
-    o.subtotal || 0, o.deliveryCost || 0, o.discount || 0, o.total || 0,
-    o.notes || '', o.status || 'Pending'
-  ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(','));
-  const csv  = [headers.join(','), ...rows].join('\n');
-  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href = url; a.download = `khelil-tech-orders-${new Date().toISOString().slice(0, 10)}.csv`;
-  a.click(); URL.revokeObjectURL(url);
-  toast('CSV exported ✅', 'ok');
-}
-
-// ============================================================
-// SETTINGS
-// ============================================================
-function saveWA() {
-  const wa = (document.getElementById('wa-number').value || '').replace(/\s/g, '').replace('+', '');
-  if (wa) { localStorage.setItem('kt-wa', wa); toast('WhatsApp number saved ✅', 'ok'); }
-  else toast('Please enter a valid number', 'err');
-}
-
-async function testSheets() {
-  const res = document.getElementById('sheets-test-result');
-  if (res) res.textContent = 'Testing...';
-  try {
-    await fetch(SHEETS_URL, {
-      method: 'POST',
-      mode:   'no-cors',
-      headers: { 'Content-Type': 'application/json' },
-      body:   JSON.stringify({ test: true, source: 'KHELIL TECH', timestamp: new Date().toISOString() })
-    });
-    if (res) { res.textContent = '✅ Connection OK'; res.style.color = 'var(--lime)'; }
-  } catch (e) {
-    if (res) { res.textContent = '❌ Failed: ' + e.message; res.style.color = 'var(--red)'; }
-  }
-}
-
-// ============================================================
 // THEME TOGGLE — Light / Dark Mode
 // ============================================================
 function toggleTheme() {
@@ -1002,6 +1095,17 @@ function initTheme() {
   updateThemeBtn(isLight);
 }
 
+
+// ============================================================
+// SECURITY — escape untrusted user-submitted text (review name,
+// title, comment) before inserting it into innerHTML, to prevent
+// stored XSS via the public review form.
+// ============================================================
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
 
 function toast(msg, type = 'info') {
   const box   = document.getElementById('toast-box');
@@ -1042,6 +1146,7 @@ function subscribe() {
 const heroIcos = ['🖥️','💻','📱','🎧','⌨️','🖱️','🔧'];
 let heroIdx = 0;
 function rotHeroIco() {
+  if (flashDealActive) return; // الكارد راه تحت تحكم الـ Flash Deal، ما نديروش الدوران الافتراضي
   heroIdx = (heroIdx + 1) % heroIcos.length;
   const el = document.getElementById('hero-ico');
   if (!el) return;
@@ -1052,3 +1157,361 @@ function rotHeroIco() {
 
 function toggleMob() { document.getElementById('mob-menu').classList.toggle('open'); }
 function closeMob()  { document.getElementById('mob-menu').classList.remove('open'); }
+// ============================================================
+// REVIEWS SYSTEM — Supabase backend
+// ============================================================
+
+// ---- FETCH reviews من Supabase (تقييمات موافق عليها فقط) ----
+async function fetchReviews(productId) {
+  try {
+    const { data, error } = await supabaseClient
+      .from('reviews')
+      .select('*')
+      .eq('product_id', productId)
+      .eq('is_approved', true)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return Array.isArray(data) ? data.map(r => ({
+      id:        r.id,
+      productId: r.product_id,
+      name:      r.name,
+      title:     r.title || '',
+      comment:   r.comment,
+      rating:    r.rating,
+      date:      new Date(r.created_at).toLocaleDateString('fr-DZ', { year: 'numeric', month: 'short', day: 'numeric' }),
+      timestamp: r.created_at,
+    })) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+// ---- POST review لـ Supabase ----
+async function postReview(reviewData) {
+  try {
+    const { data, error } = await supabaseClient
+      .from('reviews')
+      .insert({
+        product_id: reviewData.productId,
+        name:       reviewData.name,
+        title:      reviewData.title || null,
+        comment:    reviewData.comment,
+        rating:     reviewData.rating,
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return {
+      success: true,
+      review: {
+        id:        data.id,
+        productId: data.product_id,
+        name:      data.name,
+        title:     data.title || '',
+        comment:   data.comment,
+        rating:    data.rating,
+        date:      new Date(data.created_at).toLocaleDateString('fr-DZ', { year: 'numeric', month: 'short', day: 'numeric' }),
+        timestamp: data.created_at,
+      },
+    };
+  } catch (e) {
+    return { success: false };
+  }
+}
+
+// ---- حساب المتوسط الحقيقي من قائمة reviews ----
+function calcLiveRating(productId, reviews) {
+  const p = PRODS.find(x => x.id === productId);
+  if (!p) return { avg: 0, total: 0, dist: null };
+
+  if (!reviews || reviews.length === 0) {
+    return { avg: p.rating, total: p.reviews, dist: null };
+  }
+
+  const seedWeight = p.reviews;
+  const seedSum    = p.rating * seedWeight;
+  const userSum    = reviews.reduce((s, r) => s + Number(r.rating), 0);
+  const userCount  = reviews.length;
+  const totalCount = seedWeight + userCount;
+  const avg        = (seedSum + userSum) / totalCount;
+
+  const dist = [5, 4, 3, 2, 1].map(star => ({
+    star,
+    count: reviews.filter(r => Number(r.rating) === star).length
+  }));
+
+  return { avg: Math.round(avg * 10) / 10, total: totalCount, dist };
+}
+
+// ---- HTML النجوم ----
+function starsHTML(rating, size = 16) {
+  const full  = Math.floor(rating);
+  const half  = rating % 1 >= 0.5 ? 1 : 0;
+  const empty = 5 - full - half;
+  const s     = `font-size:${size}px;`;
+  return `<span style="${s}color:#F5C842">${'★'.repeat(full)}${'⯨'.repeat(half)}</span><span style="${s}color:var(--border)">${'★'.repeat(empty)}</span>`;
+}
+
+// ---- HTML التقييم المباشر في هيدر المنتج (يُحدَّث بعد تحميل reviews) ----
+function buildLiveRatingHTML(productId, reviews) {
+  const { avg, total } = calcLiveRating(productId, reviews);
+  return `
+    ${starsHTML(avg, 16)}
+    <span class="live-avg">${avg.toFixed(1)}</span>
+    <span class="live-count">(${total.toLocaleString('fr-DZ')} reviews)</span>`;
+}
+
+// ---- بناء قسم Reviews ----
+function buildReviewsSection(productId, reviews = []) {
+  const { avg, total, dist } = calcLiveRating(productId, reviews);
+
+  const distHTML = dist
+    ? dist.map(d => {
+        const pct = reviews.length > 0 ? Math.round(d.count / reviews.length * 100) : 0;
+        return `
+          <div class="rev-bar-row">
+            <span class="rev-bar-label">${d.star}★</span>
+            <div class="rev-bar-track">
+              <div class="rev-bar-fill" style="width:${pct}%"></div>
+            </div>
+            <span class="rev-bar-count">${d.count}</span>
+          </div>`;
+      }).join('')
+    : `<div style="font-size:12px;color:var(--text3)">Be the first to leave a review!</div>`;
+
+  const SHOW_INIT = 4;
+  const reviewsHTML = reviews.length === 0
+    ? `<div class="reviews-empty">
+        <div class="rev-empty-ico">💬</div>
+        <p>No reviews yet — be the first to share your experience!</p>
+      </div>`
+    : reviews.slice().reverse().slice(0, SHOW_INIT).map(revCardHTML).join('') +
+      (reviews.length > SHOW_INIT
+        ? `<button class="rev-load-more" onclick="loadMoreReviews('${productId}', ${SHOW_INIT})">
+            LOAD MORE REVIEWS (${reviews.length - SHOW_INIT} more)
+           </button>`
+        : '');
+
+  return `
+    <div class="reviews-section" id="reviews-section-${productId}">
+      <h2 class="reviews-section-title">
+        CUSTOMER REVIEWS
+        <span class="rev-total-badge" id="rev-total-badge-${productId}">${total} reviews</span>
+      </h2>
+
+      <div class="reviews-summary">
+        <div class="rev-avg-block">
+          <div class="rev-avg-num" id="rev-avg-num-${productId}">${avg.toFixed(1)}</div>
+          <div class="rev-avg-stars">${starsHTML(avg, 18)}</div>
+          <div class="rev-avg-count">out of 5</div>
+        </div>
+        <div class="rev-bars" id="rev-bars-${productId}">
+          ${distHTML}
+        </div>
+      </div>
+
+      <!-- Write Review -->
+      <div class="write-review-wrap">
+        <div class="write-review-title">✍️ WRITE A REVIEW</div>
+        <div class="star-picker" id="star-picker-${productId}"
+          onclick="pickStar(event,'${productId}')"
+          onmouseover="hoverStar(event,'${productId}')"
+          onmouseout="resetHover('${productId}')">
+          <span class="sp-star" data-v="1">★</span>
+          <span class="sp-star" data-v="2">★</span>
+          <span class="sp-star" data-v="3">★</span>
+          <span class="sp-star" data-v="4">★</span>
+          <span class="sp-star" data-v="5">★</span>
+        </div>
+        <div class="rev-rating-label" id="rev-rating-lbl-${productId}">Select a rating</div>
+        <div class="rev-form-row">
+          <input class="rev-name-in" id="rev-name-${productId}" placeholder="Your name *" maxlength="50"/>
+          <input class="rev-name-in" id="rev-title-${productId}" placeholder="Review title (optional)" maxlength="80"/>
+        </div>
+        <textarea class="rev-comment-in" id="rev-comment-${productId}"
+          placeholder="Share your experience with this product... *" maxlength="600"></textarea>
+        <button class="rev-submit-btn" onclick="submitReview('${productId}')">POST REVIEW →</button>
+      </div>
+
+      <!-- Loading indicator -->
+      <div id="rev-loading-${productId}" style="text-align:center;padding:20px;color:var(--text3);font-size:12px;font-family:'JetBrains Mono',monospace;display:none;">
+        ⏳ Loading reviews...
+      </div>
+
+      <!-- Reviews List -->
+      <div class="reviews-list" id="rev-list-${productId}">
+        ${reviewsHTML}
+      </div>
+    </div>`;
+}
+
+// ---- HTML كارت review واحد ----
+function revCardHTML(r) {
+  const initial = esc((r.name || '?')[0].toUpperCase());
+  const rating  = Number(r.rating) || 0;
+  const dateStr = esc(r.date || '');
+  return `
+    <div class="rev-card" id="rev-card-${r.id}">
+      <div class="rev-card-header">
+        <div class="rev-card-left">
+          <div class="rev-avatar">${initial}</div>
+          <div>
+            <div class="rev-card-name">${esc(r.name)}</div>
+            <div class="rev-card-stars">
+              <span style="color:#F5C842">${'★'.repeat(rating)}</span><span style="color:var(--border)">${'★'.repeat(5 - rating)}</span>
+            </div>
+          </div>
+        </div>
+        <div class="rev-card-date">${dateStr}</div>
+      </div>
+      ${r.title ? `<div style="font-weight:600;font-size:13px;margin-bottom:6px;color:var(--text)">${esc(r.title)}</div>` : ''}
+      <div class="rev-card-comment">${esc(r.comment)}</div>
+    </div>`;
+}
+
+// ---- Cache للـ reviews (لتجنب طلبات متكررة) ----
+const _revCache = {};
+
+// ---- فتح صفحة منتج: تحميل reviews من Supabase ----
+async function loadReviewsForProduct(productId) {
+  const loadEl = document.getElementById('rev-loading-' + productId);
+  const listEl = document.getElementById('rev-list-'    + productId);
+  if (loadEl) loadEl.style.display = 'block';
+  if (listEl) listEl.style.display = 'none';
+
+  const reviews = await fetchReviews(productId);
+  _revCache[productId] = reviews;
+
+  if (loadEl) loadEl.style.display = 'none';
+  if (listEl) listEl.style.display = 'flex';
+
+  // إعادة رسم قسم reviews بالكامل مع البيانات الحقيقية
+  const anchor = document.getElementById('reviews-anchor');
+  if (anchor) anchor.innerHTML = buildReviewsSection(productId, reviews);
+
+  // تحديث التقييم في هيدر المنتج
+  const liveRating = document.getElementById('det-live-rating');
+  if (liveRating) liveRating.innerHTML = buildLiveRatingHTML(productId, reviews);
+}
+
+// ---- STAR PICKER ----
+const _revState = {};
+function getRevState(pid) {
+  if (!_revState[pid]) _revState[pid] = { selected: 0 };
+  return _revState[pid];
+}
+
+function hoverStar(e, pid) {
+  const star = e.target.closest('.sp-star');
+  if (!star) return;
+  highlightStars(pid, parseInt(star.dataset.v), true);
+}
+
+function resetHover(pid) {
+  highlightStars(pid, getRevState(pid).selected, false);
+}
+
+function pickStar(e, pid) {
+  const star = e.target.closest('.sp-star');
+  if (!star) return;
+  const v = parseInt(star.dataset.v);
+  getRevState(pid).selected = v;
+  highlightStars(pid, v, false);
+  const labels = ['','Poor 😞','Fair 😐','Good 😊','Very Good 😄','Excellent ⭐'];
+  const lbl = document.getElementById('rev-rating-lbl-' + pid);
+  if (lbl) { lbl.textContent = labels[v]; lbl.classList.add('filled'); }
+}
+
+function highlightStars(pid, upTo, isHover) {
+  const picker = document.getElementById('star-picker-' + pid);
+  if (!picker) return;
+  picker.querySelectorAll('.sp-star').forEach(s => {
+    const v = parseInt(s.dataset.v);
+    s.classList.toggle('active', v <= upTo && !isHover);
+    s.classList.toggle('hover',  v <= upTo &&  isHover);
+  });
+}
+
+// ---- SUBMIT REVIEW ----
+async function submitReview(pid) {
+  const st      = getRevState(pid);
+  const nameEl  = document.getElementById('rev-name-'    + pid);
+  const cmtEl   = document.getElementById('rev-comment-' + pid);
+  const titleEl = document.getElementById('rev-title-'   + pid);
+  const btn     = document.querySelector('.rev-submit-btn');
+
+  let ok = true;
+  if (!st.selected) { toast('Please select a star rating ⭐', 'err'); ok = false; }
+  if (!nameEl?.value.trim()) {
+    nameEl?.classList.add('err');
+    nameEl?.addEventListener('input', () => nameEl.classList.remove('err'), { once: true });
+    ok = false;
+  }
+  if (!cmtEl?.value.trim()) {
+    cmtEl?.classList.add('err');
+    cmtEl?.addEventListener('input', () => cmtEl.classList.remove('err'), { once: true });
+    if (ok && st.selected) toast('Please write a comment ✍️', 'err');
+    ok = false;
+  }
+  if (!ok) { if (!st.selected || !nameEl?.value.trim()) toast('Please fill all required fields ⚠️', 'err'); return; }
+
+  // Disable button while sending
+  if (btn) { btn.disabled = true; btn.textContent = 'Posting...'; }
+
+  const now    = new Date();
+  const review = {
+    id:        'rev-' + Date.now(),
+    productId: pid,
+    productName: (PRODS.find(x => x.id === pid) || {}).name || '',
+    name:      nameEl.value.trim(),
+    title:     titleEl?.value.trim() || '',
+    comment:   cmtEl.value.trim(),
+    rating:    st.selected,
+    date:      now.toLocaleDateString('fr-DZ', { year:'numeric', month:'short', day:'numeric' }),
+    timestamp: now.toISOString(),
+  };
+
+  const result = await postReview(review);
+
+  // Reset form
+  nameEl.value = ''; cmtEl.value = '';
+  if (titleEl) titleEl.value = '';
+  getRevState(pid).selected = 0;
+  highlightStars(pid, 0, false);
+  const lbl = document.getElementById('rev-rating-lbl-' + pid);
+  if (lbl) { lbl.textContent = 'Select a rating'; lbl.classList.remove('filled'); }
+  if (btn) { btn.disabled = false; btn.textContent = 'POST REVIEW →'; }
+
+  if (!result.success) {
+    toast('Could not post your review. Please check your connection and try again.', 'err');
+    return;
+  }
+
+  // أضيف التعليق الحقيقي (رجع من Supabase) للـ cache وأعيد الرسم
+  if (!_revCache[pid]) _revCache[pid] = [];
+  _revCache[pid].push(result.review);
+
+  const anchor = document.getElementById('reviews-anchor');
+  if (anchor) anchor.innerHTML = buildReviewsSection(pid, _revCache[pid]);
+
+  const liveRating = document.getElementById('det-live-rating');
+  if (liveRating) liveRating.innerHTML = buildLiveRatingHTML(pid, _revCache[pid]);
+
+  toast('Review posted! Thank you 🎉', 'ok');
+}
+
+// ---- LOAD MORE ----
+function loadMoreReviews(pid, currentShown) {
+  const reviews  = (_revCache[pid] || []).slice().reverse();
+  const newCount = Math.min(currentShown + 4, reviews.length);
+  const list     = document.getElementById('rev-list-' + pid);
+  if (!list) return;
+  list.querySelector('.rev-load-more')?.remove();
+  list.insertAdjacentHTML('beforeend', reviews.slice(currentShown, newCount).map(revCardHTML).join(''));
+  if (newCount < reviews.length) {
+    list.insertAdjacentHTML('beforeend', `
+      <button class="rev-load-more" onclick="loadMoreReviews('${pid}', ${newCount})">
+        LOAD MORE REVIEWS (${reviews.length - newCount} more)
+      </button>`);
+  }
+}
