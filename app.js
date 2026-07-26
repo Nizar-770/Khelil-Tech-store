@@ -1,6 +1,7 @@
 // ============================================================
 // CONFIG — Supabase project connection
 // ============================================================
+
 const SUPABASE_URL      = 'https://fiqomqwgbjvgsjfrwuoj.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpcW9tcXdnYmp2Z3NqZnJ3dW9qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1NTc5NTYsImV4cCI6MjEwMDEzMzk1Nn0.m4YDWY6wB6w4Ty_a0oDxpJrIT-k6C86A1HHm_oEsKvQ'; // Project Settings → API → anon public key
 
@@ -31,6 +32,30 @@ try {
 } catch (e) {
   console.warn('Supabase client failed to initialize — running on seed catalog only.', e);
 }
+
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbz7uwgzoIzKyLQp5Lo8mhfXQwgY6F_h8Ez_UFD5LKZM55oNiiLb4Bs3perRh4Gu5rdL/exec';
+
+// ============================================================
+// SECURITY — HTML escaping helper (prevents stored/reflected XSS)
+// Use this on ANY value that came from a user, a review, an order
+// form, or Google Sheets before inserting it via innerHTML.
+// ============================================================
+function escapeHTML(str) {
+  if (str === null || str === undefined) return '';
+  const d = document.createElement('div');
+  d.textContent = String(str);
+  return d.innerHTML;
+}
+
+// ============================================================
+// PROMO CODES CONFIG — عدل هنا فقط بدل ما تدخل في الكود
+// ============================================================
+const PROMO_CODES = {
+  'KHELIL5':  0.05,
+  'KHELIL10': 0.10,
+  'KHELIL20': 0.20,
+};
+
 
 function getWaNumber() {
   return (localStorage.getItem('kt-wa') || '213558455695').replace(/\D/g,'');
@@ -210,6 +235,7 @@ let PRODS = [
 ];
 
 // ============================================================
+
 // LIVE PRODUCTS — يقرا الكاتالوغ الحقيقي من Supabase ويبدل
 // مصفوفة الـ seed. إذا الطلب فشل (أوفلاين، مشكل نتوورك...) الموقع
 // يكمل خدمة بالـ seed اللي فوق بلا ما يهبط.
@@ -391,6 +417,8 @@ function viewFlashDeal() {
 }
 
 // ============================================================
+
+
 // HELPER — يحول YouTube URL لـ embed
 // ============================================================
 function getYouTubeId(url) {
@@ -422,8 +450,9 @@ function buildVideoEmbed(url) {
 // HELPER — يعرض الصورة أو الـ emoji كـ fallback
 // ============================================================
 function prodMedia(p, size = 'card') {
-  // Support both p.img (string) and p.imgs (array) — use first image available
   const imgSrc = (Array.isArray(p.imgs) && p.imgs.length ? p.imgs[0] : '') || p.img || '';
+  const iconSize = size === 'card' ? '64px' : '120px';
+  const fallbackHTML = `<span style="font-size:${iconSize};position:relative;z-index:1;">${p.icon}</span>`;
   if (imgSrc) {
     const styles = size === 'card'
       ? 'width:100%;height:100%;object-fit:contain;position:relative;z-index:1;'
@@ -432,10 +461,10 @@ function prodMedia(p, size = 'card') {
       src="${imgSrc}"
       alt="${p.name}"
       style="${styles}"
-      onerror="this.style.display='none';this.nextElementSibling.style.display='block';"
-    /><span style="display:none;font-size:${size==='card'?'64px':'120px'};position:relative;z-index:1;">${p.icon}</span>`;
+      onerror="this.replaceWith(Object.assign(document.createElement('span'),{style:'font-size:${iconSize};position:relative;z-index:1;',textContent:'${p.icon}'}));"
+    />`;
   }
-  return `<span style="font-size:${size==='card'?'64px':'120px'};position:relative;z-index:1;">${p.icon}</span>`;
+  return fallbackHTML;
 }
 
 // ============================================================
@@ -486,6 +515,27 @@ document.addEventListener('DOMContentLoaded', () => {
 // ============================================================
 function nav(page, cat = '', pushToHistory = true) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+
+  // إعادة عنوان الصفحة الافتراضي عند الخروج من صفحة المنتج
+  if (page !== 'product') {
+    document.title = 'KHELIL TECH — Premium Electronics Store Algeria';
+  }
+
+  // صفحة المنتج — page='product', cat=productId (string)
+  if (page === 'product' && cat && !nav._openingProd) {
+    const prodId = String(cat);
+    const prod = PRODS.find(x => String(x.id) === prodId);
+    if (prod) {
+      nav._openingProd = true;
+      openProd(prodId, pushToHistory);
+      nav._openingProd = false;
+      return;
+    } else {
+      nav('shop', '', pushToHistory);
+      return;
+    }
+  }
+
   const pg = document.getElementById('page-' + page);
   if (!pg) return;
   pg.classList.add('active');
@@ -506,6 +556,7 @@ function nav(page, cat = '', pushToHistory = true) {
     history.pushState(state, '', url);
   }
 }
+nav._openingProd = false;
 
 // الرجوع للصفحة السابقة بزر Back
 window.addEventListener('popstate', function(event) {
@@ -625,10 +676,19 @@ function goSearch() {
 // ============================================================
 // PRODUCT DETAIL — gallery بالصورة الحقيقية + فيديو
 // ============================================================
-function openProd(id) {
+function openProd(id, pushToHistory = true) {
   const p = PRODS.find(x => x.id === id);
-  if (!p) return;
+  if (!p) { nav('shop', '', false); return; }
   curProd = p;
+
+  // تحديث عنوان الصفحة والـ meta description ديناميكياً
+  document.title = `${p.name} — KHELIL TECH`;
+  let metaDesc = document.querySelector('meta[name="description"]');
+  if (!metaDesc) { metaDesc = document.createElement('meta'); metaDesc.name = 'description'; document.head.appendChild(metaDesc); }
+  metaDesc.content = `${p.name} — ${p.brand} | ${p.price.toLocaleString('fr-DZ')} DA | Khelil Tech Algeria`;
+
+  // تسجيل المنتج في المشاهدات الأخيرة
+  addRecentlyViewed(id);
   const disc = p.orig ? Math.round((1 - p.price / p.orig) * 100) : 0;
 
   // بناء الـ gallery: support both p.img (string) and p.imgs (array) — حتى 8 صور
@@ -665,7 +725,14 @@ function openProd(id) {
     </div>` : '';
 
   document.getElementById('det-content').innerHTML = `
-    <div class="back-link" onclick="nav('shop')">← Back</div>
+    <nav class="breadcrumb" aria-label="breadcrumb">
+      <span class="bc-item" onclick="nav('home')">Home</span>
+      <span class="bc-sep">›</span>
+      <span class="bc-item" onclick="nav('shop','${p.cat}')">${p.cat}</span>
+      <span class="bc-sep">›</span>
+      <span class="bc-item bc-current">${p.brand}</span>
+    </nav>
+    <div class="back-link" onclick="nav('shop','${p.cat}')">← Back to ${p.cat}</div>
     <div class="det-grid">
       <div class="det-gallery">
         <div class="det-main-img">${mainMedia}</div>
@@ -711,10 +778,11 @@ function openProd(id) {
     <div style="margin-top:60px;">
       <h2 style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:22px;">RELATED PRODUCTS</h2>
       <div class="prods-grid">${PRODS.filter(x => x.cat === p.cat && x.id !== p.id).slice(0, 4).map(prodCard).join('')}</div>
-    </div>`;
-  nav('product');
-  // تحميل reviews من Supabase بعد فتح الصفحة
+    </div>
+    <div style="margin-top:48px;" id="recently-viewed-section"></div>`;
+  nav('product', String(p.id), pushToHistory);
   loadReviewsForProduct(p.id);
+  renderRecentlyViewed(p.id);
 }
 
 function switchDetImg(src, thumbEl) {
@@ -723,6 +791,33 @@ function switchDetImg(src, thumbEl) {
   document.querySelectorAll('.det-thumb').forEach(t => t.classList.remove('on'));
   if (thumbEl) thumbEl.classList.add('on');
 }
+
+// ============================================================
+// RECENTLY VIEWED
+// ============================================================
+function addRecentlyViewed(id) {
+  let rv = JSON.parse(localStorage.getItem('kt-rv') || '[]');
+  rv = rv.filter(x => x !== id);  // نحذف إذا كان موجود
+  rv.unshift(id);                  // نضيفه في البداية
+  rv = rv.slice(0, 8);             // نحتفظ بـ 8 فقط
+  localStorage.setItem('kt-rv', JSON.stringify(rv));
+}
+
+function renderRecentlyViewed(currentId) {
+  const el = document.getElementById('recently-viewed-section');
+  if (!el) return;
+  const rv = JSON.parse(localStorage.getItem('kt-rv') || '[]');
+  const items = rv
+    .filter(id => id !== currentId)
+    .map(id => PRODS.find(x => x.id === id))
+    .filter(Boolean)
+    .slice(0, 4);
+  if (items.length === 0) { el.innerHTML = ''; return; }
+  el.innerHTML = `
+    <h2 style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:22px;">🕐 RECENTLY VIEWED</h2>
+    <div class="prods-grid">${items.map(prodCard).join('')}</div>`;
+}
+
 
 function chgQty(d) {
   const el = document.getElementById('det-qty');
@@ -893,10 +988,13 @@ function calcTotals() {
 function applyPromo() {
   const code = (document.getElementById('promo-code') || {}).value || '';
   const sub  = cartTotal();
-  if      (code.toUpperCase() === 'KHELIL10') { discAmt = Math.round(sub * 0.10); toast('10% discount applied! 🎉', 'ok'); }
-  else if (code.toUpperCase() === 'KHELIL20') { discAmt = Math.round(sub * 0.20); toast('20% discount applied! 🎉', 'ok'); }
-  else if (code.toUpperCase() === 'KHELIL5')  { discAmt = Math.round(sub * 0.05); toast('5% discount applied! 🎉',  'ok'); }
-  else { toast('Invalid promo code ❌', 'err'); }
+  const rate = PROMO_CODES[code.toUpperCase().trim()];
+  if (rate) {
+    discAmt = Math.round(sub * rate);
+    toast(`${Math.round(rate * 100)}% discount applied! 🎉`, 'ok');
+  } else {
+    toast('Invalid promo code ❌', 'err');
+  }
   calcTotals();
 }
 
@@ -1033,12 +1131,12 @@ async function placeOrder() {
 function renderSuccess(order) {
   document.getElementById('suc-oid').textContent = order.orderId;
   document.getElementById('suc-dets').innerHTML = `
-    <div class="od-item"><div class="od-lbl">Customer</div><div class="od-val">${order.firstName} ${order.lastName}</div></div>
-    <div class="od-item"><div class="od-lbl">Phone</div><div class="od-val">${order.phone}</div></div>
-    <div class="od-item"><div class="od-lbl">Wilaya</div><div class="od-val">${order.wilaya}</div></div>
-    <div class="od-item"><div class="od-lbl">Delivery Type</div><div class="od-val">${order.deliveryType}</div></div>
-    <div class="od-item"><div class="od-lbl">Total</div><div class="od-val" style="color:var(--lime)">${order.total.toLocaleString('fr-DZ')} DA</div></div>
-    <div class="od-item"><div class="od-lbl">Date</div><div class="od-val">${order.date} ${order.time}</div></div>`;
+    <div class="od-item"><div class="od-lbl">Customer</div><div class="od-val">${escapeHTML(order.firstName)} ${escapeHTML(order.lastName)}</div></div>
+    <div class="od-item"><div class="od-lbl">Phone</div><div class="od-val">${escapeHTML(order.phone)}</div></div>
+    <div class="od-item"><div class="od-lbl">Wilaya</div><div class="od-val">${escapeHTML(order.wilaya)}</div></div>
+    <div class="od-item"><div class="od-lbl">Delivery Type</div><div class="od-val">${escapeHTML(order.deliveryType)}</div></div>
+    <div class="od-item"><div class="od-lbl">Total</div><div class="od-val" style="color:var(--lime)">${escapeHTML(order.total.toLocaleString('fr-DZ'))} DA</div></div>
+    <div class="od-item"><div class="od-lbl">Date</div><div class="od-val">${escapeHTML(order.date)} ${escapeHTML(order.time)}</div></div>`;
 }
 
 // ============================================================
@@ -1069,6 +1167,31 @@ function waProd(id) {
   const wa  = getWaNumber();
   const msg = encodeURIComponent(`Hi! I am interested in:\n*${p.name}*\nPrice: ${p.price.toLocaleString('fr-DZ')} DA\nPlease send more info.`);
   window.open(`https://wa.me/${wa}?text=${msg}`, '_blank');
+}
+
+// ============================================================
+// SETTINGS
+// ============================================================
+function saveWA() {
+  const wa = (document.getElementById('wa-number').value || '').replace(/\s/g, '').replace('+', '');
+  if (wa) { localStorage.setItem('kt-wa', wa); toast('WhatsApp number saved ✅', 'ok'); }
+  else toast('Please enter a valid number', 'err');
+}
+
+async function testSheets() {
+  const res = document.getElementById('sheets-test-result');
+  if (res) res.textContent = 'Testing...';
+  try {
+    await fetch(SHEETS_URL, {
+      method: 'POST',
+      mode:   'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body:   JSON.stringify({ test: true, source: 'KHELIL TECH', timestamp: new Date().toISOString() })
+    });
+    if (res) { res.textContent = '✅ Connection OK'; res.style.color = 'var(--lime)'; }
+  } catch (e) {
+    if (res) { res.textContent = '❌ Failed: ' + e.message; res.style.color = 'var(--red)'; }
+  }
 }
 
 // ============================================================
@@ -1161,7 +1284,6 @@ function closeMob()  { document.getElementById('mob-menu').classList.remove('ope
 // REVIEWS SYSTEM — Supabase backend
 // ============================================================
 
-// ---- FETCH reviews من Supabase (تقييمات موافق عليها فقط) ----
 async function fetchReviews(productId) {
   try {
     const { data, error } = await supabaseClient
@@ -1186,7 +1308,6 @@ async function fetchReviews(productId) {
   }
 }
 
-// ---- POST review لـ Supabase ----
 async function postReview(reviewData) {
   try {
     const { data, error } = await supabaseClient
@@ -1219,7 +1340,6 @@ async function postReview(reviewData) {
   }
 }
 
-// ---- حساب المتوسط الحقيقي من قائمة reviews ----
 function calcLiveRating(productId, reviews) {
   const p = PRODS.find(x => x.id === productId);
   if (!p) return { avg: 0, total: 0, dist: null };
@@ -1243,7 +1363,6 @@ function calcLiveRating(productId, reviews) {
   return { avg: Math.round(avg * 10) / 10, total: totalCount, dist };
 }
 
-// ---- HTML النجوم ----
 function starsHTML(rating, size = 16) {
   const full  = Math.floor(rating);
   const half  = rating % 1 >= 0.5 ? 1 : 0;
@@ -1252,7 +1371,6 @@ function starsHTML(rating, size = 16) {
   return `<span style="${s}color:#F5C842">${'★'.repeat(full)}${'⯨'.repeat(half)}</span><span style="${s}color:var(--border)">${'★'.repeat(empty)}</span>`;
 }
 
-// ---- HTML التقييم المباشر في هيدر المنتج (يُحدَّث بعد تحميل reviews) ----
 function buildLiveRatingHTML(productId, reviews) {
   const { avg, total } = calcLiveRating(productId, reviews);
   return `
@@ -1261,7 +1379,6 @@ function buildLiveRatingHTML(productId, reviews) {
     <span class="live-count">(${total.toLocaleString('fr-DZ')} reviews)</span>`;
 }
 
-// ---- بناء قسم Reviews ----
 function buildReviewsSection(productId, reviews = []) {
   const { avg, total, dist } = calcLiveRating(productId, reviews);
 
@@ -1310,7 +1427,6 @@ function buildReviewsSection(productId, reviews = []) {
         </div>
       </div>
 
-      <!-- Write Review -->
       <div class="write-review-wrap">
         <div class="write-review-title">✍️ WRITE A REVIEW</div>
         <div class="star-picker" id="star-picker-${productId}"
@@ -1333,19 +1449,16 @@ function buildReviewsSection(productId, reviews = []) {
         <button class="rev-submit-btn" onclick="submitReview('${productId}')">POST REVIEW →</button>
       </div>
 
-      <!-- Loading indicator -->
       <div id="rev-loading-${productId}" style="text-align:center;padding:20px;color:var(--text3);font-size:12px;font-family:'JetBrains Mono',monospace;display:none;">
         ⏳ Loading reviews...
       </div>
 
-      <!-- Reviews List -->
       <div class="reviews-list" id="rev-list-${productId}">
         ${reviewsHTML}
       </div>
     </div>`;
 }
 
-// ---- HTML كارت review واحد ----
 function revCardHTML(r) {
   const initial = esc((r.name || '?')[0].toUpperCase());
   const rating  = Number(r.rating) || 0;
@@ -1369,10 +1482,8 @@ function revCardHTML(r) {
     </div>`;
 }
 
-// ---- Cache للـ reviews (لتجنب طلبات متكررة) ----
 const _revCache = {};
 
-// ---- فتح صفحة منتج: تحميل reviews من Supabase ----
 async function loadReviewsForProduct(productId) {
   const loadEl = document.getElementById('rev-loading-' + productId);
   const listEl = document.getElementById('rev-list-'    + productId);
@@ -1385,16 +1496,13 @@ async function loadReviewsForProduct(productId) {
   if (loadEl) loadEl.style.display = 'none';
   if (listEl) listEl.style.display = 'flex';
 
-  // إعادة رسم قسم reviews بالكامل مع البيانات الحقيقية
   const anchor = document.getElementById('reviews-anchor');
   if (anchor) anchor.innerHTML = buildReviewsSection(productId, reviews);
 
-  // تحديث التقييم في هيدر المنتج
   const liveRating = document.getElementById('det-live-rating');
   if (liveRating) liveRating.innerHTML = buildLiveRatingHTML(productId, reviews);
 }
 
-// ---- STAR PICKER ----
 const _revState = {};
 function getRevState(pid) {
   if (!_revState[pid]) _revState[pid] = { selected: 0 };
@@ -1432,7 +1540,6 @@ function highlightStars(pid, upTo, isHover) {
   });
 }
 
-// ---- SUBMIT REVIEW ----
 async function submitReview(pid) {
   const st      = getRevState(pid);
   const nameEl  = document.getElementById('rev-name-'    + pid);
@@ -1455,7 +1562,6 @@ async function submitReview(pid) {
   }
   if (!ok) { if (!st.selected || !nameEl?.value.trim()) toast('Please fill all required fields ⚠️', 'err'); return; }
 
-  // Disable button while sending
   if (btn) { btn.disabled = true; btn.textContent = 'Posting...'; }
 
   const now    = new Date();
@@ -1473,7 +1579,6 @@ async function submitReview(pid) {
 
   const result = await postReview(review);
 
-  // Reset form
   nameEl.value = ''; cmtEl.value = '';
   if (titleEl) titleEl.value = '';
   getRevState(pid).selected = 0;
@@ -1487,7 +1592,6 @@ async function submitReview(pid) {
     return;
   }
 
-  // أضيف التعليق الحقيقي (رجع من Supabase) للـ cache وأعيد الرسم
   if (!_revCache[pid]) _revCache[pid] = [];
   _revCache[pid].push(result.review);
 
@@ -1500,7 +1604,6 @@ async function submitReview(pid) {
   toast('Review posted! Thank you 🎉', 'ok');
 }
 
-// ---- LOAD MORE ----
 function loadMoreReviews(pid, currentShown) {
   const reviews  = (_revCache[pid] || []).slice().reverse();
   const newCount = Math.min(currentShown + 4, reviews.length);
