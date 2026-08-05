@@ -1,4 +1,3 @@
-
 /* ════════════════════════════════════════════════════════════════════════
    KHELIL TECH — Style.css  (Refactored — Responsive Edition)
    Strategy  : Mobile-first with clean desktop overrides.
@@ -399,7 +398,7 @@ body::before {
   margin: 0 auto;
   padding: 80px var(--px);
   display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
   gap: 80px;
   align-items: center;
   min-width: 0;
@@ -460,6 +459,7 @@ body::before {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   display: block;
+  white-space: nowrap;
 }
 
 .hero-p {
@@ -3054,7 +3054,7 @@ body::before {
   margin: 0 auto;
   padding: 80px var(--px);
   display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
   gap: 80px;
   align-items: center;
   min-width: 0;
@@ -3115,6 +3115,7 @@ body::before {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   display: block;
+  white-space: nowrap;
 }
 
 .hero-p {
@@ -5509,4 +5510,3 @@ body.light-mode .sk-line {
   background-size: 200% 100%;
   animation: sk-shimmer 1.4s infinite;
 }
-
