@@ -2112,6 +2112,12 @@ body.light-mode .theme-toggle  { border-color: var(--border2); color: var(--text
 @media (min-width: 1200px) {
   .prods-grid { grid-template-columns: repeat(4, 1fr); }
 }
+/* -- DESKTOP TWO-COLUMN 961px-1260px: shrink hero title so "TECHNOLOGY" fits its
+   grid column. Was overflowing #hero's overflow:hidden and getting clipped -- */
+@media (min-width: 961px) and (max-width: 1260px) {
+  .hero-h1 { font-size: clamp(1.8rem, 4.6vw, 2.85rem); }
+}
+
 
 /* ── TABLET / LANDSCAPE ≤960px ─────────────────────────────────────── */
 @media (max-width: 960px) {
@@ -4794,6 +4800,12 @@ body.light-mode .theme-toggle  { border-color: var(--border2); color: var(--text
 @media (min-width: 1200px) {
   .prods-grid { grid-template-columns: repeat(4, 1fr); }
 }
+/* -- DESKTOP TWO-COLUMN 961px-1260px: shrink hero title so "TECHNOLOGY" fits its
+   grid column. Was overflowing #hero's overflow:hidden and getting clipped -- */
+@media (min-width: 961px) and (max-width: 1260px) {
+  .hero-h1 { font-size: clamp(1.8rem, 4.6vw, 2.85rem); }
+}
+
 
 /* ── TABLET / LANDSCAPE ≤960px ─────────────────────────────────────── */
 @media (max-width: 960px) {
