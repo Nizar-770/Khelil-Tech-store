@@ -758,8 +758,9 @@ body::before {
 .prod-img img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  padding: 12px;
+  object-fit: cover;
+  object-position: center;
+  padding: 0;
   position: relative;
   z-index: 1;
   transition: transform 0.3s;
@@ -3420,8 +3421,9 @@ body::before {
 .prod-img img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  padding: 12px;
+  object-fit: cover;
+  object-position: center;
+  padding: 0;
   position: relative;
   z-index: 1;
   transition: transform 0.3s;

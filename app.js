@@ -393,7 +393,7 @@ function renderFlashHero(entry) {
   if (icoEl) {
     if (p.img) {
       if (icoEl.tagName === 'IMG') { icoEl.src = p.img; icoEl.alt = p.name; icoEl.style.display = ''; }
-      else icoEl.outerHTML = `<img id="hero-ico" src="${p.img}" alt="${esc(p.name)}" style="width:120px;height:120px;object-fit:contain;display:block;margin:0 auto 16px;" onerror="this.style.display='none';"/>`;
+      else icoEl.outerHTML = `<img id="hero-ico" src="${p.img}" alt="${esc(p.name)}" style="width:100%;height:260px;object-fit:cover;object-position:center;border-radius:var(--r2);display:block;margin:0 auto 16px;" onerror="this.style.display='none';"/>`;
     } else if (icoEl.tagName === 'IMG') {
       icoEl.outerHTML = `<span class="hc-img" id="hero-ico">${p.icon || '🖥️'}</span>`;
     } else {
@@ -455,7 +455,7 @@ function prodMedia(p, size = 'card') {
   const fallbackHTML = `<span style="font-size:${iconSize};position:relative;z-index:1;">${p.icon}</span>`;
   if (imgSrc) {
     const styles = size === 'card'
-      ? 'width:100%;height:100%;object-fit:contain;position:relative;z-index:1;'
+      ? 'width:100%;height:100%;object-fit:cover;object-position:center;position:relative;z-index:1;'
       : 'max-width:100%;max-height:340px;object-fit:contain;display:block;margin:auto;';
     return `<img
       src="${imgSrc}"
